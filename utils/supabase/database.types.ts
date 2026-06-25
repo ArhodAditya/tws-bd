@@ -184,6 +184,7 @@ export type Database = {
           id: string;
           points: number | null;
           role: string | null;
+          show_on_leaderboard: boolean;
           updated_at: string | null;
         };
         Insert: {
@@ -192,6 +193,7 @@ export type Database = {
           id: string;
           points?: number | null;
           role?: string | null;
+          show_on_leaderboard?: boolean;
           updated_at?: string | null;
         };
         Update: {
@@ -200,6 +202,7 @@ export type Database = {
           id?: string;
           points?: number | null;
           role?: string | null;
+          show_on_leaderboard?: boolean;
           updated_at?: string | null;
         };
         // `id` references auth.users(id); that FK lives outside the public

@@ -112,10 +112,12 @@ export default function Navbar() {
             <Image
               src="/twsbd-logo.png"
               alt="The Whites Bangladesh"
-              width={64}
-              height={64}
+              width={80}
+              height={80}
               priority
-              className="h-16 w-16 object-contain transition-[filter] duration-300 group-hover:drop-shadow-[0_0_14px_rgba(212,175,55,0.6)] dark:invert"
+              // Source PNG is white, so invert it to dark in light mode and
+              // leave it white in dark mode — always readable on either surface.
+              className="h-20 w-20 object-contain invert transition-all duration-500 ease-out hover:scale-110 hover:-rotate-2 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] dark:invert-0 dark:hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
             />
           </span>
           <span className="font-display text-lg font-extrabold leading-none tracking-tight">

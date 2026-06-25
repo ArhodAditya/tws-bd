@@ -3,11 +3,60 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export type SyncResult = {
   success: boolean;
   message: string;
 };
+
+export type ActionResult = {
+  success: boolean;
+  message?: string;
+};
+
+// Re-verify the caller is an admin. Server Actions are reachable via direct
+// POST, so the page gate alone is never enough.
+async function requireAdmin(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, message: "You must be signed in." };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") {
+    return { success: false, message: "Admins only." };
+  }
+  return { success: true };
+}
+
+// Toggle whether a user appears on the public Fan Zone leaderboard. Uses the
+// service-role client so an admin can update *another* user's row (profiles RLS
+// typically restricts updates to the owner). Admin status is re-verified above.
+export async function setLeaderboardVisibility(
+  userId: string,
+  visible: boolean
+): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({ show_on_leaderboard: visible })
+    .eq("id", userId);
+
+  if (error) return { success: false, message: error.message };
+
+  // Reflect the change on the public leaderboard immediately.
+  revalidatePath("/fans-zone");
+  return { success: true };
+}
 
 // Triggers the football sync route from the admin dashboard. The CRON_SECRET
 // never reaches the browser: it's read server-side here and sent as the Bearer

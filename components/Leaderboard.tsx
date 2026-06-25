@@ -132,6 +132,8 @@ export default async function Leaderboard() {
   const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, points")
+    // Only accounts an admin has marked visible appear on the public board.
+    .eq("show_on_leaderboard", true)
     .order("points", { ascending: false, nullsFirst: false })
     .limit(20);
 

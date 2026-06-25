@@ -22,9 +22,8 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import {
   CATEGORY_LABEL,
-  CATEGORY_LABEL_PLURAL,
   FORMATIONS,
-  positionToCategory,
+  playerFitsSlot,
   type Formation,
   type FormationSlot,
   type SlotCategory,
@@ -92,19 +91,17 @@ export default function SquadBuilderPage() {
     };
   }, [supabase]);
 
-  // Players grouped by normalized category, for the picker and counts.
-  const byCategory = useMemo(() => {
-    const groups: Record<SlotCategory, SquadPlayer[]> = {
-      GK: [],
-      DEF: [],
-      MID: [],
-      FWD: [],
-    };
-    for (const player of players) {
-      groups[positionToCategory(player.position)].push(player);
-    }
-    return groups;
-  }, [players]);
+  // Candidates eligible for whichever slot the picker is open on. A slot can
+  // accept several positions (e.g. a 4-2-3-1 winger slot takes wingers AND wide
+  // midfielders), so we filter by `playerFitsSlot` rather than one rigid
+  // category bucket — this is what unblocks placing Vinícius Jr. & co.
+  const candidates = useMemo(
+    () =>
+      pickerSlot
+        ? players.filter((player) => playerFitsSlot(player.position, pickerSlot))
+        : [],
+    [players, pickerSlot]
+  );
 
   const placedIds = useMemo(
     () => new Set(Object.values(assignments).map((p) => p.id)),
@@ -337,7 +334,7 @@ export default function SquadBuilderPage() {
       {pickerSlot ? (
         <PlayerPicker
           slot={pickerSlot}
-          candidates={byCategory[pickerSlot.category]}
+          candidates={candidates}
           placedIds={placedIds}
           currentPlayer={assignments[pickerSlot.id] ?? null}
           onPick={(player) => assignPlayer(pickerSlot.id, player)}
@@ -393,6 +390,7 @@ function Pitch({
       ) : (
         formation.slots.map((slot) => {
           const player = assignments[slot.id];
+          const slotLabel = slot.label ?? CATEGORY_LABEL[slot.category];
           return (
             <button
               key={slot.id}
@@ -407,13 +405,13 @@ function Pitch({
               aria-label={
                 player
                   ? `${displayName(player)} — tap to change`
-                  : `Add ${CATEGORY_LABEL[slot.category]}`
+                  : `Add ${slotLabel}`
               }
             >
               {player ? (
                 <PlacedToken player={player} />
               ) : (
-                <EmptySlot category={slot.category} />
+                <EmptySlot label={slotLabel} />
               )}
             </button>
           );
@@ -502,15 +500,15 @@ function PlacedToken({ player }: { player: SquadPlayer }) {
   );
 }
 
-// An empty position: dashed ring with a plus + the category label.
-function EmptySlot({ category }: { category: SlotCategory }) {
+// An empty position: dashed ring with a plus + the slot's role label.
+function EmptySlot({ label }: { label: string }) {
   return (
     <>
       <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed border-gold-300/50 bg-midnight-950/30 text-gold-200/70 transition group-hover:border-gold-300 sm:h-12 sm:w-12">
         <Plus className="h-5 w-5" />
       </span>
       <span className="rounded-full bg-midnight-950/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-300 sm:text-[11px]">
-        {CATEGORY_LABEL[category]}
+        {label}
       </span>
     </>
   );
@@ -564,7 +562,7 @@ function PlayerPicker({
         <div className="flex items-center justify-between border-b border-white/10 bg-midnight-950/40 px-5 py-4">
           <div>
             <h2 className="font-display text-lg font-extrabold text-white">
-              Choose a {CATEGORY_LABEL[slot.category]}
+              Choose a {slot.label ?? CATEGORY_LABEL[slot.category]}
             </h2>
             <p className="text-xs text-zinc-400">
               {available.length} available
@@ -595,8 +593,7 @@ function PlayerPicker({
 
           {available.length === 0 ? (
             <p className="px-2 py-10 text-center text-sm text-zinc-400">
-              No {CATEGORY_LABEL_PLURAL[slot.category].toLowerCase()} left to
-              pick.
+              No players available for this slot.
             </p>
           ) : (
             <ul className="space-y-1">

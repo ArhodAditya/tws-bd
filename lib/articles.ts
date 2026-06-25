@@ -17,6 +17,22 @@ export type ArticleWithAuthor = Article & {
   profiles: ArticleAuthor | null;
 };
 
+// Turn a title into a URL-safe slug (handles accents like Bernabéu → bernabeu).
+// Shared by the New and Edit article forms.
+export function slugify(input: string): string {
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      // NFKD splits accents into "base char + combining mark"; the replace below
+      // drops the combining marks along with any other non-URL-safe characters.
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
+}
+
 // Shown when an article has no linked profile / the profile has no name.
 export const FALLBACK_AUTHOR_NAME = "The Whites Admin";
 
@@ -41,7 +57,15 @@ export function formatArticleDate(value?: string | null): string {
 // ~120 characters without cutting a word in half.
 export function getExcerpt(content?: string | null, maxLength = 120): string {
   if (!content) return "";
-  const normalized = content.replace(/\s+/g, " ").trim();
+  const normalized = content
+    // Drop Markdown image embeds entirely, and reduce links to their text, so
+    // inline-image syntax never bleeds into card/SEO excerpts.
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    // Strip common leading Markdown markers (#, >, *, -, `, _, ~).
+    .replace(/[#>*_`~]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (normalized.length <= maxLength) return normalized;
 
   const slice = normalized.slice(0, maxLength);

@@ -2,7 +2,8 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Newspaper } from "lucide-react";
+import { ArrowLeft, Calendar, Newspaper, Pencil } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { createClient } from "@/utils/supabase/server";
 import {
   MOCK_ARTICLES,
@@ -60,10 +61,25 @@ export default async function ArticlePage({
     notFound();
   }
 
-  const paragraphs = (article.content ?? "")
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  // Admin convenience: show an "Edit" link, but only for real DB-backed
+  // articles (the sample/mock fallbacks aren't editable).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    isAdmin = profile?.role === "admin";
+  }
+  const canEdit =
+    isAdmin && !MOCK_ARTICLES.some((mock) => mock.id === article.id);
+
+  const content = (article.content ?? "").trim();
 
   return (
     <article className="bg-white">
@@ -96,6 +112,15 @@ export default async function ArticlePage({
               <Calendar className="h-4 w-4" />
               {formatArticleDate(article.created_at)}
             </span>
+            {canEdit ? (
+              <Link
+                href={`/admin/articles/edit/${article.id}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/40 bg-gold-500/10 px-3 py-1 font-semibold text-gold-300 transition-colors hover:bg-gold-500/20"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Link>
+            ) : null}
           </div>
         </div>
       </header>
@@ -123,22 +148,13 @@ export default async function ArticlePage({
         </div>
       </div>
 
-      {/* Body */}
+      {/* Body — Markdown so admins can place inline images anywhere. Rendered
+          on a light surface, so we use `prose` (not prose-invert) and size
+          images responsively. */}
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-        {paragraphs.length > 0 ? (
-          <div className="space-y-5 text-lg leading-relaxed text-midnight-800/80">
-            {paragraphs.map((paragraph, index) => (
-              <p
-                key={index}
-                className={
-                  index === 0
-                    ? "first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-5xl first-letter:font-bold first-letter:leading-[0.8] first-letter:text-gold-600"
-                    : undefined
-                }
-              >
-                {paragraph}
-              </p>
-            ))}
+        {content ? (
+          <div className="prose prose-lg max-w-none text-midnight-800/80 prose-headings:font-display prose-headings:text-midnight-900 prose-p:text-midnight-800/80 prose-strong:text-midnight-900 prose-a:font-medium prose-a:text-gold-700 hover:prose-a:text-gold-600 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:shadow-md">
+            <ReactMarkdown>{content}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-midnight-800/60">Full story coming soon.</p>

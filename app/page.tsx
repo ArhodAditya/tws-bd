@@ -75,8 +75,12 @@ export default function Home() {
           <p
             className={`${entrance} delay-200 mt-6 max-w-2xl text-lg text-slate-600 dark:text-zinc-300 sm:text-xl`}
           >
-            The Ultimate Madridista Hub — your home for Real Madrid news,
-            community, and culture, right here in Bangladesh.
+            <span className="font-display text-2xl font-semibold italic text-gold-700 dark:text-gold-300 sm:text-3xl">
+              Pasión Blanca, Desde Bangladesh
+            </span>
+            <span className="mt-3 block">
+              Your home for Los Blancos news, community, and culture.
+            </span>
           </p>
 
           <div

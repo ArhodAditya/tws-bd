@@ -2,6 +2,9 @@
 /* Entrance-animation utilities (animate-in, fade-in, slide-in-from-bottom-*,
    fill-mode-*, delay-*) — the Tailwind v4 port of tailwindcss-animate. */
 @import "tw-animate-css";
+/* `prose` typography utilities — used to render Markdown article bodies
+   (incl. inline images) in app/news/[slug]. */
+@plugin "@tailwindcss/typography";
 
 /* Tailwind v4 defaults the `dark:` variant to prefers-color-scheme. next-themes
    toggles a `.dark` class on <html>, so re-point the variant at that class
@@ -82,6 +85,25 @@ body {
   transform: none;
 }
 
+/* Continuous, smooth pulsating glow — used behind the "Coming Soon" hero on
+   the Events page. Decorative only, so it's safe to disable under
+   reduced-motion. */
+@keyframes tws-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+}
+.animate-glow {
+  animation: tws-glow 4.5s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .reveal.is-visible {
@@ -94,5 +116,10 @@ body {
      skip straight to the resting state so content is never stuck hidden. */
   .animate-in {
     animation: none !important;
+  }
+
+  /* Freeze the decorative glow for users who prefer reduced motion. */
+  .animate-glow {
+    animation: none;
   }
 }

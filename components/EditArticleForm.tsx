@@ -2,43 +2,31 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LoaderCircle, Send } from "lucide-react";
+import { ChevronDown, LoaderCircle, Save } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
 import ArticleBodyEditor from "@/components/ArticleBodyEditor";
-import { slugify } from "@/lib/articles";
+import { slugify, type Article } from "@/lib/articles";
 
 const CATEGORIES = ["news", "breaking", "analysis", "report"] as const;
 
-export default function NewArticleForm({
-  userId,
-  authorName,
-}: {
-  userId: string;
-  authorName: string;
-}) {
+export default function EditArticleForm({ article }: { article: Article }) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
 
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugEdited, setSlugEdited] = useState(false);
-  const [category, setCategory] = useState<string>("news");
-  const [imageUrl, setImageUrl] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState(article.title ?? "");
+  const [slug, setSlug] = useState(article.slug ?? "");
+  const [category, setCategory] = useState<string>(article.category ?? "news");
+  const [imageUrl, setImageUrl] = useState(article.image_url ?? "");
+  const [content, setContent] = useState(article.content ?? "");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep the slug in sync with the title until the user edits it themselves.
-  const handleTitleChange = (value: string) => {
-    setTitle(value);
-    if (!slugEdited) setSlug(slugify(value));
-  };
-
+  // On edit the slug is independent of the title — admins typically keep the
+  // published URL stable, so we don't auto-rewrite it from the title here.
   const handleSlugChange = (value: string) => {
     setSlug(slugify(value));
-    setSlugEdited(true);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -52,22 +40,24 @@ export default function NewArticleForm({
     }
 
     setLoading(true);
-    const { error: insertError } = await supabase.from("articles").insert({
-      title: title.trim(),
-      slug: finalSlug,
-      category,
-      image_url: imageUrl.trim() || null,
-      content,
-      author_id: userId,
-    });
+    const { error: updateError } = await supabase
+      .from("articles")
+      .update({
+        title: title.trim(),
+        slug: finalSlug,
+        category,
+        image_url: imageUrl.trim() || null,
+        content,
+      })
+      .eq("id", article.id);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (updateError) {
+      setError(updateError.message);
       setLoading(false);
       return;
     }
 
-    // Straight to the freshly published article. Keep `loading` true so the
+    // Back to the (possibly re-slugged) article. Keep `loading` true so the
     // button stays disabled while the navigation happens.
     router.push(`/news/${finalSlug}`);
     router.refresh();
@@ -92,7 +82,7 @@ export default function NewArticleForm({
           type="text"
           required
           value={title}
-          onChange={(event) => handleTitleChange(event.target.value)}
+          onChange={(event) => setTitle(event.target.value)}
           placeholder="Real Madrid Clinch La Liga Title…"
           className={inputClass}
         />
@@ -113,7 +103,7 @@ export default function NewArticleForm({
           className={inputClass}
         />
         <p className="text-xs text-midnight-900/50">
-          Auto-generated from the title — edit if you like. URL:{" "}
+          URL:{" "}
           <span className="font-medium text-gold-600">
             /news/{slug || "your-slug"}
           </span>
@@ -180,11 +170,7 @@ export default function NewArticleForm({
       ) : null}
 
       {/* Actions */}
-      <div className="flex flex-col-reverse items-stretch gap-4 border-t border-midnight-900/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-midnight-900/50">
-          Publishing as{" "}
-          <span className="font-semibold text-midnight-900">{authorName}</span>
-        </p>
+      <div className="flex flex-col-reverse items-stretch gap-4 border-t border-midnight-900/10 pt-6 sm:flex-row sm:items-center sm:justify-end">
         <button
           type="submit"
           disabled={loading}
@@ -193,12 +179,12 @@ export default function NewArticleForm({
           {loading ? (
             <>
               <LoaderCircle className="h-4 w-4 animate-spin" />
-              Publishing…
+              Saving…
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" />
-              Publish Article
+              <Save className="h-4 w-4" />
+              Save Changes
             </>
           )}
         </button>

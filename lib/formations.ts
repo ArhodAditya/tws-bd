@@ -12,6 +12,19 @@ export interface FormationSlot {
   category: SlotCategory;
   x: number;
   y: number;
+  /**
+   * Optional human label for the slot's role (e.g. "Left Wing", "Striker").
+   * Falls back to the category label when absent.
+   */
+  label?: string;
+  /**
+   * Optional list of acceptable detailed position codes (e.g. ["LW","LM","LAM",
+   * "LF"]). When present it WIDENS who can fill the slot beyond its base
+   * `category`: a slot can then accept players from several categories. This is
+   * what lets a winger/attacker (stored broadly as "Attacker") drop into a
+   * 4-2-3-1 attacking-midfield slot. See `playerFitsSlot`.
+   */
+  accepts?: string[];
 }
 
 export interface Formation {
@@ -53,6 +66,67 @@ export function positionToCategory(position: string | null): SlotCategory {
     return "FWD";
   }
   return "MID";
+}
+
+// Maps a detailed position code (as used in slot `accepts` lists) to the broad
+// category our roster actually stores. This is the bridge between fine-grained
+// tactical codes (LW, CAM, ST, …) and the coarse "Attacker"/"Midfielder" values
+// the API-Football sync writes into `players.position`.
+const POSITION_CODE_CATEGORY: Record<string, SlotCategory> = {
+  GK: "GK",
+  // Defenders
+  CB: "DEF",
+  LB: "DEF",
+  RB: "DEF",
+  LWB: "DEF",
+  RWB: "DEF",
+  // Midfielders (incl. attacking mids and wide mids)
+  CM: "MID",
+  CDM: "MID",
+  DM: "MID",
+  CAM: "MID",
+  AM: "MID",
+  LM: "MID",
+  RM: "MID",
+  LAM: "MID",
+  RAM: "MID",
+  // Forwards / wingers
+  ST: "FWD",
+  CF: "FWD",
+  LW: "FWD",
+  RW: "FWD",
+  LF: "FWD",
+  RF: "FWD",
+};
+
+// The set of broad categories a slot will accept. With no `accepts` list this
+// is just the slot's base category; with one, it's the union of categories the
+// listed codes map to (plus the base category as a safety net). De-duplicated.
+export function slotAcceptedCategories(slot: FormationSlot): SlotCategory[] {
+  if (!slot.accepts || slot.accepts.length === 0) return [slot.category];
+  const categories = new Set<SlotCategory>([slot.category]);
+  for (const code of slot.accepts) {
+    const category = POSITION_CODE_CATEGORY[code.trim().toUpperCase()];
+    if (category) categories.add(category);
+  }
+  return [...categories];
+}
+
+// Whether a player (by their stored position string) may fill a given slot.
+// Handles the multiple acceptable values gracefully: a direct code match wins,
+// otherwise we fall back to comparing broad categories so coarse roster data
+// ("Attacker", "Midfielder") still slots into the widened attacking positions.
+export function playerFitsSlot(
+  position: string | null,
+  slot: FormationSlot
+): boolean {
+  if (slot.accepts && position) {
+    const code = position.trim().toUpperCase();
+    if (slot.accepts.some((accepted) => accepted.trim().toUpperCase() === code)) {
+      return true;
+    }
+  }
+  return slotAcceptedCategories(slot).includes(positionToCategory(position));
 }
 
 const gk = (): FormationSlot => ({ id: "GK", category: "GK", x: 50, y: 88 });
@@ -103,10 +177,40 @@ export const FORMATIONS: Formation[] = [
       { id: "DEF4", category: "DEF", x: 86, y: 72 },
       { id: "MID1", category: "MID", x: 36, y: 56 }, // double pivot
       { id: "MID2", category: "MID", x: 64, y: 56 },
-      { id: "MID3", category: "MID", x: 22, y: 34 }, // attacking band
-      { id: "MID4", category: "MID", x: 50, y: 32 },
-      { id: "MID5", category: "MID", x: 78, y: 34 },
-      { id: "FWD1", category: "FWD", x: 50, y: 16 },
+      // Attacking band — widened so wingers/attacking mids (stored broadly as
+      // "Attacker") can fill them, not just central midfielders.
+      {
+        id: "MID3",
+        category: "MID",
+        x: 22,
+        y: 34,
+        label: "Left Wing",
+        accepts: ["LW", "LM", "LAM", "LF"],
+      },
+      {
+        id: "MID4",
+        category: "MID",
+        x: 50,
+        y: 32,
+        label: "Attacking Mid",
+        accepts: ["CAM", "CF", "CM"],
+      },
+      {
+        id: "MID5",
+        category: "MID",
+        x: 78,
+        y: 34,
+        label: "Right Wing",
+        accepts: ["RW", "RM", "RAM", "RF"],
+      },
+      {
+        id: "FWD1",
+        category: "FWD",
+        x: 50,
+        y: 16,
+        label: "Striker",
+        accepts: ["ST", "CF", "LW", "RW"],
+      },
     ],
   },
   {

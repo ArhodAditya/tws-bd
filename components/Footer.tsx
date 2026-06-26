@@ -136,10 +136,10 @@ export default function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 text-xs dark:border-white/10 sm:flex-row">
           <p>© {year} The Whites Bangladesh. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link href="#" className={linkClass}>
+            <Link href="/privacy" className={linkClass}>
               Privacy
             </Link>
-            <Link href="#" className={linkClass}>
+            <Link href="/terms" className={linkClass}>
               Terms
             </Link>
             <span>

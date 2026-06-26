@@ -9,17 +9,17 @@ import { createClient } from "@/utils/supabase/client";
 // callback redirects back with `?welcome=1`, which this component consumes (and
 // strips from the URL) before greeting the Madridista by name.
 //
-// The name is fetched client-side via `supabase.auth.getUser()` (authoritative —
-// it revalidates the token and returns fresh user_metadata, unlike getSession()
-// which can be momentarily empty right after the production redirect). The
-// overlay is NOT rendered until that name state is populated, so the greeting
-// can never flash without a name. `useSearchParams()` is why the caller wraps
-// this in <Suspense> (keeping the rest of the route statically renderable).
+// Bulletproofing for the production session-hydration delay: the overlay is
+// guaranteed to appear within 500ms of `?welcome=1`, no matter how slow or
+// flaky the auth calls are. We try getSession() first (the local session, fast
+// right after a redirect), fall back to getUser() (networked) only if needed,
+// and a hard 500ms timeout forces a generic "Madridista" greeting if neither
+// has resolved. `useSearchParams()` is why the caller wraps this in <Suspense>.
 export default function WelcomeToast() {
   const searchParams = useSearchParams();
   const handled = useRef(false);
 
-  // `null` until the async getUser() resolves; gates the whole overlay.
+  // `null` until resolved (by session lookup OR the 500ms fallback); gates the UI.
   const [firstName, setFirstName] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -39,27 +39,48 @@ export default function WelcomeToast() {
     );
 
     let active = true;
+    let resolved = false;
+    // Resolve the greeting exactly once — whichever of (session lookup) or the
+    // (hard 500ms fallback) wins first. This is what makes the toast appear
+    // regardless of network delays.
+    const resolve = (name: string) => {
+      if (!active || resolved) return;
+      resolved = true;
+      setFirstName(name);
+    };
+
+    const fallback = window.setTimeout(() => resolve("Madridista"), 500);
+
     (async () => {
       let name = "Madridista";
       try {
         const supabase = createClient();
+        // getSession() reads the locally-stored session and is typically the
+        // fastest to resolve right after the OAuth redirect.
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        // Safely extract the first name from the Google auth metadata.
+          data: { session },
+        } = await supabase.auth.getSession();
+        let meta = session?.user?.user_metadata;
+        // Only hit the network if the session hasn't hydrated yet.
+        if (!meta) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          meta = user?.user_metadata;
+        }
         name =
-          user?.user_metadata?.full_name?.split(" ")[0] ||
-          user?.user_metadata?.name?.split(" ")[0] ||
+          meta?.full_name?.split(" ")[0] ||
+          meta?.name?.split(" ")[0] ||
           "Madridista";
       } catch {
-        // Network/auth hiccup — keep the generic greeting so the overlay still
-        // fires rather than getting stuck unrendered.
+        // Network/auth hiccup — keep the generic greeting.
       }
-      if (active) setFirstName(name);
+      resolve(name);
     })();
 
     return () => {
       active = false;
+      window.clearTimeout(fallback);
     };
   }, [searchParams]);
 

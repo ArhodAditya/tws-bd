@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -64,7 +65,12 @@ export default function RootLayout({
           <Footer />
           <CartDrawer />
           <CartToast />
-          <WelcomeToast />
+          {/* useSearchParams() inside WelcomeToast must sit under a Suspense
+              boundary so the rest of the route stays statically renderable on
+              Vercel (otherwise the build de-opts / can swallow the ?welcome flag). */}
+          <Suspense fallback={null}>
+            <WelcomeToast />
+          </Suspense>
           </CartProvider>
         </ThemeProvider>
       </body>

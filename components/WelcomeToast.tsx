@@ -9,17 +9,19 @@ import { createClient } from "@/utils/supabase/client";
 // callback redirects back with `?welcome=1`, which this component consumes (and
 // strips from the URL) before greeting the Madridista by name.
 //
-// IMPORTANT: showing the overlay is gated ONLY on the marker — never on the
-// session read. After the production redirect on Vercel the client's session
-// can be momentarily unavailable; the name is best-effort, but the celebration
-// must still fire. `useSearchParams()` is why the caller wraps this in
-// <Suspense> (so the rest of the route can stay statically rendered).
+// The name is fetched client-side via `supabase.auth.getUser()` (authoritative —
+// it revalidates the token and returns fresh user_metadata, unlike getSession()
+// which can be momentarily empty right after the production redirect). The
+// overlay is NOT rendered until that name state is populated, so the greeting
+// can never flash without a name. `useSearchParams()` is why the caller wraps
+// this in <Suspense> (keeping the rest of the route statically renderable).
 export default function WelcomeToast() {
   const searchParams = useSearchParams();
   const handled = useRef(false);
 
-  const [visible, setVisible] = useState(false);
-  const [name, setName] = useState<string | null>(null);
+  // `null` until the async getUser() resolves; gates the whole overlay.
+  const [firstName, setFirstName] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (handled.current) return;
@@ -38,30 +40,22 @@ export default function WelcomeToast() {
 
     let active = true;
     (async () => {
-      // Best-effort display name from the Google auth metadata. If the session
-      // isn't readable yet, we still greet (generically) rather than show
-      // nothing — that decoupling is what fixes the "missing on Vercel" bug.
-      let firstName = "Madridista";
+      let name = "Madridista";
       try {
         const supabase = createClient();
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (user) {
-          const fullName: string =
-            user.user_metadata?.full_name ??
-            user.user_metadata?.name ??
-            user.email?.split("@")[0] ??
-            "Madridista";
-          firstName = fullName.split(" ")[0];
-        }
+          data: { user },
+        } = await supabase.auth.getUser();
+        // Safely extract the first name from the Google auth metadata.
+        name =
+          user?.user_metadata?.full_name?.split(" ")[0] ||
+          user?.user_metadata?.name?.split(" ")[0] ||
+          "Madridista";
       } catch {
-        // Ignore — keep the generic greeting.
+        // Network/auth hiccup — keep the generic greeting so the overlay still
+        // fires rather than getting stuck unrendered.
       }
-      if (!active) return;
-      setName(firstName);
-      setVisible(true);
+      if (active) setFirstName(name);
     })();
 
     return () => {
@@ -69,23 +63,24 @@ export default function WelcomeToast() {
     };
   }, [searchParams]);
 
-  // Auto-dismiss 5s after the overlay appears, and allow Escape to close.
+  // Auto-dismiss 5s after the overlay appears; Escape also closes it.
   useEffect(() => {
-    if (!visible) return;
-    const timer = window.setTimeout(() => setVisible(false), 5000);
+    if (!firstName || dismissed) return;
+    const timer = window.setTimeout(() => setDismissed(true), 5000);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setVisible(false);
+      if (e.key === "Escape") setDismissed(true);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener("keydown", onKey);
     };
-  }, [visible]);
+  }, [firstName, dismissed]);
 
-  if (!visible) return null;
+  // Only render the massive VIP UI once the name state is populated.
+  if (!firstName || dismissed) return null;
 
-  const dismiss = () => setVisible(false);
+  const dismiss = () => setDismissed(true);
 
   return (
     <div
@@ -123,8 +118,7 @@ export default function WelcomeToast() {
           <h2 className="mt-3 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">
             Hala Madrid,
             <br />
-            <span className="text-gradient-gold">{name ?? "Madridista"}</span>!
-            👑
+            <span className="text-gradient-gold">{firstName}</span>! 👑
           </h2>
 
           <p className="mt-4 text-lg font-semibold text-zinc-300">

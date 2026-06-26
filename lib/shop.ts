@@ -36,19 +36,37 @@ export function formatPrice(price: number | null): string {
 // placeholder so a misconfigured deploy is obvious rather than silently wrong.
 export const FALLBACK_WHATSAPP_NUMBER = "880000000000";
 
+// Flat surcharge (BDT) for optional custom name/number printing on a jersey.
+export const CUSTOM_FONT_FEE = 250;
+
 // Build a wa.me deep link with a pre-filled order message. `whatsappNumber`
 // comes from NEXT_PUBLIC_WHATSAPP_NUMBER; only digits are kept (wa.me needs an
-// international number with no +, spaces or dashes).
+// international number with no +, spaces or dashes). When `customName` is set
+// (jersey font upsell), the surcharge is added and the order total + custom
+// text are appended to the message.
 export function whatsappOrderUrl(
-  product: Pick<Product, "name">,
+  product: Pick<Product, "name" | "price">,
   size: string | null,
-  whatsappNumber: string
+  whatsappNumber: string,
+  customName?: string | null
 ): string {
   const number = (whatsappNumber || FALLBACK_WHATSAPP_NUMBER).replace(
     /\D/g,
     ""
   );
   const sizePart = size ? ` in size ${size}` : "";
-  const text = `Hala Madrid! I want to order the ${product.name}${sizePart}.`;
-  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+
+  // WhatsApp renders *text* as bold; encodeURIComponent turns each "\n" into
+  // the %0A line break WhatsApp expects.
+  const lines = [`Hala Madrid! I want to order the ${product.name}${sizePart}.`];
+
+  const trimmedName = customName?.trim();
+  if (trimmedName) {
+    const total = (product.price ?? 0) + CUSTOM_FONT_FEE;
+    lines.push(`*Custom Name:* ${trimmedName}`);
+    lines.push(`*Custom Font:* +${formatPrice(CUSTOM_FONT_FEE)}`);
+    lines.push(`*Total:* ${formatPrice(total)}`);
+  }
+
+  return `https://wa.me/${number}?text=${encodeURIComponent(lines.join("\n"))}`;
 }

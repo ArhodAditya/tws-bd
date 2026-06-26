@@ -65,10 +65,15 @@ export type Database = {
       };
       matches: {
         Row: {
+          api_fixture_id: number | null;
           api_id: number | null;
           away_score: number | null;
+          away_team_id: number | null;
+          away_team_name: string | null;
           competition: string | null;
           home_score: number | null;
+          home_team_id: number | null;
+          home_team_name: string | null;
           id: string;
           match_date: string | null;
           opponent: string | null;
@@ -77,10 +82,15 @@ export type Database = {
           venue: string | null;
         };
         Insert: {
+          api_fixture_id?: number | null;
           api_id?: number | null;
           away_score?: number | null;
+          away_team_id?: number | null;
+          away_team_name?: string | null;
           competition?: string | null;
           home_score?: number | null;
+          home_team_id?: number | null;
+          home_team_name?: string | null;
           id?: string;
           match_date?: string | null;
           opponent?: string | null;
@@ -89,10 +99,15 @@ export type Database = {
           venue?: string | null;
         };
         Update: {
+          api_fixture_id?: number | null;
           api_id?: number | null;
           away_score?: number | null;
+          away_team_id?: number | null;
+          away_team_name?: string | null;
           competition?: string | null;
           home_score?: number | null;
+          home_team_id?: number | null;
+          home_team_name?: string | null;
           id?: string;
           match_date?: string | null;
           opponent?: string | null;
@@ -176,6 +191,28 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      predictor_settings: {
+        // Single-row global config (id is pinned to 1 by a CHECK constraint).
+        Row: {
+          id: number;
+          is_active: boolean;
+          offline_message: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          is_active?: boolean;
+          offline_message?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          is_active?: boolean;
+          offline_message?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {

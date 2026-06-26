@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, ShieldHalf, Users } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import { fetchPredictorSettings } from "@/lib/predictor-settings";
 import PredictorCard from "@/components/PredictorCard";
+import PredictorOffline from "@/components/PredictorOffline";
 import Leaderboard from "@/components/Leaderboard";
 
 export const metadata: Metadata = {
@@ -26,7 +29,12 @@ function LeaderboardSkeleton() {
   );
 }
 
-export default function FansZonePage() {
+export default async function FansZonePage() {
+  // The Match Predictor "kill switch": when an admin has set it offline we show
+  // a premium offline card instead of the predictor (or its sample fallback).
+  const supabase = await createClient();
+  const predictorSettings = await fetchPredictorSettings(supabase);
+
   return (
     <div className="relative overflow-hidden bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-white">
       {/* Ambient gold glow, matching the rest of the brand surfaces */}
@@ -55,7 +63,11 @@ export default function FansZonePage() {
         {/* Dashboard — Predictor (left / top) + Leaderboard (right) */}
         <div className="mt-10 grid grid-cols-1 gap-6 lg:mt-12 lg:grid-cols-5">
           <div className="lg:col-span-3">
-            <PredictorCard />
+            {predictorSettings.is_active ? (
+              <PredictorCard />
+            ) : (
+              <PredictorOffline message={predictorSettings.offline_message} />
+            )}
           </div>
           <div className="lg:col-span-2">
             <Suspense fallback={<LeaderboardSkeleton />}>

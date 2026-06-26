@@ -10,9 +10,12 @@ import {
   Volleyball,
   X,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import {
   CATEGORY_FILTERS,
   CATEGORY_LABEL,
+  CUSTOM_FONT_FEE,
   formatPrice,
   whatsappOrderUrl,
   type CategoryFilter,
@@ -296,6 +299,8 @@ function ProductModal({
   const [size, setSize] = useState<string | null>(
     hasSizes ? product.sizes[0] : null
   );
+  // Optional custom name/number printing (jerseys only). Empty = no upsell.
+  const [customName, setCustomName] = useState("");
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const { addItem } = useCart();
 
@@ -321,7 +326,12 @@ function ProductModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const orderUrl = whatsappOrderUrl(product, size, whatsappNumber);
+  const orderUrl = whatsappOrderUrl(
+    product,
+    size,
+    whatsappNumber,
+    isJersey ? customName : null
+  );
 
   return (
     <>
@@ -333,16 +343,17 @@ function ProductModal({
       aria-label={product.name}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-gold-500/20 bg-midnight-900 shadow-2xl sm:rounded-3xl md:flex-row"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-gold-500/20 bg-midnight-900 shadow-2xl sm:rounded-3xl lg:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image gallery */}
-        <div className="w-full bg-midnight-950 md:w-1/2">
+        {/* Image gallery — full width while stacked on mobile/tablet, half the
+            modal once the layout goes side-by-side at lg. */}
+        <div className="w-full bg-midnight-950 lg:w-1/2">
           <ProductGallery product={product} />
         </div>
 
         {/* Details */}
-        <div className="flex flex-1 flex-col overflow-y-auto p-6 sm:p-8">
+        <div className="flex flex-1 flex-col overflow-y-auto p-6 md:p-8">
           <div className="flex items-start justify-between gap-4">
             <h2 className="font-display text-2xl font-extrabold leading-tight text-white">
               {product.name}
@@ -362,9 +373,14 @@ function ProductModal({
           </p>
 
           {product.description ? (
-            <p className="mt-4 text-sm leading-relaxed text-zinc-300">
-              {product.description}
-            </p>
+            <div className="prose prose-invert prose-sm md:prose-base dark:prose-slate mt-4 max-w-none text-slate-300">
+              {/* remark-breaks turns the admin's single line breaks into <br>,
+                  so a plain-textarea description keeps its line breaks while
+                  still supporting Markdown bold/bullets/paragraphs. */}
+              <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+                {product.description}
+              </ReactMarkdown>
+            </div>
           ) : null}
 
           {/* Size chips */}
@@ -404,15 +420,50 @@ function ProductModal({
             </div>
           ) : null}
 
+          {/* Custom font upsell — jerseys only. The surcharge and the typed
+              text are appended to the WhatsApp order message below. */}
+          {isJersey ? (
+            <div className="mt-6">
+              <label
+                htmlFor="custom-name"
+                className="text-sm font-semibold text-white"
+              >
+                Add Fonts{" "}
+                <span className="font-normal text-zinc-400">(Optional)</span>
+              </label>
+              <input
+                id="custom-name"
+                type="text"
+                value={customName}
+                onChange={(event) => setCustomName(event.target.value)}
+                placeholder="E.g., VINÍCIUS JR - 7"
+                maxLength={32}
+                className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30"
+              />
+              <p className="mt-1.5 text-sm text-slate-400">
+                Font Quality: High Quality Official Fonts (+250/- BDT extra
+                charge)
+              </p>
+              {customName.trim() ? (
+                <p className="mt-1.5 text-sm font-semibold text-gold-300">
+                  New total: {formatPrice((product.price ?? 0) + CUSTOM_FONT_FEE)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Stock + order */}
           <div className="mt-auto pt-8">
             {product.in_stock ? (
-              <div className="space-y-2.5">
+              // Full-width, thumb-friendly CTAs on mobile; the wrapper's
+              // `items-start` lets them shrink back to content width on desktop
+              // where the buttons opt into `md:w-auto`.
+              <div className="flex flex-col items-start gap-2.5">
                 {/* Primary action — add to the cart and check out together. */}
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-6 py-3.5 text-sm font-semibold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-transform hover:scale-[1.02]"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-6 py-3.5 text-sm font-semibold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-transform hover:scale-[1.02] md:w-auto"
                 >
                   <ShoppingCart className="h-5 w-5" />
                   Add to Cart
@@ -422,7 +473,7 @@ function ProductModal({
                   href={orderUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-zinc-200 transition hover:border-gold-500/50 hover:text-gold-300"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-zinc-200 transition hover:border-gold-500/50 hover:text-gold-300 md:w-auto"
                 >
                   <WhatsAppIcon className="h-5 w-5" />
                   Order this item via WhatsApp

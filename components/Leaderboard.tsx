@@ -1,12 +1,16 @@
 import Image from "next/image";
-import { Crown, Medal, Trophy } from "lucide-react";
+import { Crown, Medal, Sparkles, Trophy } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import {
   type LeaderboardEntry,
-  MOCK_LEADERBOARD,
   formatPoints,
   getFanName,
 } from "@/lib/fans";
+
+// Exact empty-state copy (kept as a string so JSX never has to escape the
+// apostrophe, and the wording stays verbatim).
+const EMPTY_LEADERBOARD_COPY =
+  "Ain't nobody up here yet! Drop your predictions, secure the bag, and rule the Bernabéu, blud. 🤍✨";
 
 // Circular fan avatar — uses next/image when a picture exists, otherwise a
 // gold initial chip. `highlight` gives the #1 rank a brighter gold ring.
@@ -129,19 +133,16 @@ function LeaderboardRow({
 
 export default async function Leaderboard() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, points")
-    // Only accounts an admin has marked visible appear on the public board.
+    // Strictly only accounts an admin has marked visible appear on the board.
     .eq("show_on_leaderboard", true)
     .order("points", { ascending: false, nullsFirst: false })
     .limit(20);
 
-  // Fall back to sample standings when the table is empty or unreachable so
-  // the hub always looks complete (same philosophy as the News portal).
-  const hasRealData = !error && !!data && data.length > 0;
-  const entries: LeaderboardEntry[] =
-    data && data.length > 0 ? data : MOCK_LEADERBOARD;
+  const entries: LeaderboardEntry[] = data ?? [];
+  const isEmpty = entries.length === 0;
 
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl backdrop-blur dark:border-white/10 dark:bg-midnight-900/60">
@@ -160,20 +161,31 @@ export default async function Leaderboard() {
         </div>
       </div>
 
-      {/* Standings */}
-      <div className="flex-1 px-3 py-4 sm:px-4">
-        <ol className="space-y-2">
-          {entries.map((entry, index) => (
-            <LeaderboardRow key={entry.id} entry={entry} rank={index + 1} />
-          ))}
-        </ol>
-      </div>
+      {/* Standings — or the Gen Z empty state when nobody's been curated yet. */}
+      {isEmpty ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          {/* Crown medallion with a little sparkle flourish */}
+          <span className="relative flex h-16 w-16 items-center justify-center rounded-full border border-gold-500/30 bg-gradient-to-br from-gold-300/20 to-gold-600/10 text-gold-600 shadow-[0_0_40px_-10px_rgba(212,175,55,0.8)] dark:text-gold-300">
+            <Crown className="h-8 w-8" strokeWidth={2} />
+            <Sparkles className="absolute -right-1.5 -top-1.5 h-5 w-5 text-gold-400" />
+          </span>
 
-      {!hasRealData ? (
-        <p className="border-t border-gray-200 px-5 py-3 text-center text-xs text-slate-500 dark:border-white/10 dark:text-zinc-500 sm:px-6">
-          Showing sample standings — points update as fans make predictions.
-        </p>
-      ) : null}
+          <p className="mt-6 max-w-xs text-base font-semibold leading-relaxed text-slate-700 dark:text-zinc-100">
+            {EMPTY_LEADERBOARD_COPY}
+          </p>
+
+          {/* Decorative gold divider */}
+          <span className="mt-7 h-px w-20 bg-gradient-to-r from-transparent via-gold-500/50 to-transparent" />
+        </div>
+      ) : (
+        <div className="flex-1 px-3 py-4 sm:px-4">
+          <ol className="space-y-2">
+            {entries.map((entry, index) => (
+              <LeaderboardRow key={entry.id} entry={entry} rank={index + 1} />
+            ))}
+          </ol>
+        </div>
+      )}
     </section>
   );
 }

@@ -6,8 +6,14 @@ import { createClient } from "@/utils/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // Where to send the user after a successful sign-in.
-  const next = searchParams.get("next") ?? "/";
+  // Where to send the user after a successful sign-in. Only accept internal,
+  // non-protocol-relative paths — otherwise `new URL(next, base)` below would
+  // honour an absolute value like `https://evil.com`, an open-redirect vector.
+  const nextParam = searchParams.get("next");
+  const next =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/";
 
   if (code) {
     const supabase = await createClient();
@@ -17,14 +23,19 @@ export async function GET(request: Request) {
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
-      if (isLocalEnv) {
-        // No load balancer in front locally — origin is reliable.
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+      // No load balancer locally so `origin` is reliable; behind one in prod,
+      // trust the forwarded host.
+      const base =
+        isLocalEnv || !forwardedHost ? origin : `https://${forwardedHost}`;
+
+      // Flag a *fresh* sign-in so the client can fire the welcome toast exactly
+      // once. After the OAuth round-trip the browser client only sees
+      // INITIAL_SESSION (not SIGNED_IN), so this server-set marker is the
+      // reliable signal. The toast strips `welcome` from the URL after greeting,
+      // so it never re-fires on reload.
+      const destination = new URL(next, base);
+      destination.searchParams.set("welcome", "1");
+      return NextResponse.redirect(destination);
     }
   }
 

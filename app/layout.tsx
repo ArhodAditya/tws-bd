@@ -6,6 +6,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import { CartProvider } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
 import CartToast from "@/components/CartToast";
+import WelcomeToast from "@/components/WelcomeToast";
 import Footer from "@/components/Footer";
 
 const geistSans = Geist({
@@ -28,6 +29,13 @@ export const metadata: Metadata = {
   title: "The Whites Bangladesh — Pasión Blanca, Desde Bangladesh",
   description:
     "The Whites Bangladesh — the ultimate community hub for Real Madrid fans in Bangladesh. News, Fans Zone, and the official shop. ¡Hala Madrid!",
+  // Use the TWS brand logo as the favicon / home-screen icon. The default
+  // `app/favicon.ico` was removed so Next.js falls back to these entries.
+  icons: {
+    icon: "/twsbd-logo.png",
+    shortcut: "/twsbd-logo.png",
+    apple: "/twsbd-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -56,6 +64,7 @@ export default function RootLayout({
           <Footer />
           <CartDrawer />
           <CartToast />
+          <WelcomeToast />
           </CartProvider>
         </ThemeProvider>
       </body>

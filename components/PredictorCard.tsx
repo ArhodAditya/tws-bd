@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import Image from "next/image";
 import {
   CalendarDays,
   Check,
@@ -18,12 +17,12 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  CLUB_NAME,
   type Match,
   type RosterPlayer,
   MOCK_MATCH,
   MOCK_ROSTER,
   formatKickoff,
+  getFixtureSides,
   getPlayerLabel,
 } from "@/lib/fans";
 
@@ -38,6 +37,10 @@ function TeamCrest({
   logoUrl?: string | null;
   isClub?: boolean;
 }) {
+  // Sofascore crest URLs occasionally fail (host hiccups / unknown team) — fall
+  // back to the lettered chip instead of showing a broken image.
+  const [failed, setFailed] = useState(false);
+
   if (isClub) {
     return (
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-gold-300 to-gold-600 shadow-[0_0_20px_-6px_rgba(212,175,55,0.9)]">
@@ -45,14 +48,16 @@ function TeamCrest({
       </span>
     );
   }
-  if (logoUrl) {
+  if (logoUrl && !failed) {
     return (
-      <Image
+      // Plain <img> (not next/image) so dynamically built Sofascore crest URLs
+      // don't need to be allow-listed in next.config remotePatterns.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
         src={logoUrl}
         alt={name}
-        width={56}
-        height={56}
         referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
         className="h-14 w-14 rounded-full bg-slate-100 object-contain ring-1 ring-gray-200 dark:bg-white/5 dark:ring-white/15"
       />
     );
@@ -241,33 +246,44 @@ export default function PredictorCard() {
       predicted_scorer_id: scorerId || null,
     };
 
-    // Update an existing prediction, otherwise insert a fresh one.
-    let dbError = null;
-    if (existingPredictionId) {
-      const { error: updateError } = await supabase
-        .from("predictions")
-        .update(payload)
-        .eq("id", existingPredictionId);
-      dbError = updateError;
-    } else {
-      const { data, error: insertError } = await supabase
-        .from("predictions")
-        .insert({ ...payload, user_id: userId, match_id: match.id })
-        .select("id")
-        .single();
-      dbError = insertError;
-      if (data) setExistingPredictionId(data.id);
-    }
+    try {
+      // Update an existing prediction, otherwise insert a fresh one.
+      let dbError = null;
+      if (existingPredictionId) {
+        const { error: updateError } = await supabase
+          .from("predictions")
+          .update(payload)
+          .eq("id", existingPredictionId);
+        dbError = updateError;
+      } else {
+        const { data, error: insertError } = await supabase
+          .from("predictions")
+          .insert({ ...payload, user_id: userId, match_id: match.id })
+          .select("id")
+          .single();
+        dbError = insertError;
+        if (data) setExistingPredictionId(data.id);
+      }
 
-    if (dbError) {
-      setError(dbError.message);
+      if (dbError) {
+        setError(dbError.message);
+        return;
+      }
+
+      setSuccess(true);
+      setAlreadyPredicted(true);
+    } catch (err) {
+      // A thrown error (network drop, unexpected response) would otherwise
+      // leave the button stuck on "Saving…" with no feedback — exactly the
+      // kind of silent failure this handler must not produce.
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong submitting your prediction. Please try again."
+      );
+    } finally {
       setSubmitting(false);
-      return;
     }
-
-    setSubmitting(false);
-    setSuccess(true);
-    setAlreadyPredicted(true);
   };
 
   // --- Loading skeleton ---------------------------------------------------
@@ -289,7 +305,9 @@ export default function PredictorCard() {
     );
   }
 
-  const opponentName = match?.opponent?.trim() || "Opponent";
+  // Real home/away sides from the synced columns (falls back to the legacy
+  // club-vs-opponent shape for manual rows and the demo fixture).
+  const sides = match ? getFixtureSides(match) : null;
   const fieldsDisabled = isDemo || submitting;
 
   return (
@@ -325,8 +343,9 @@ export default function PredictorCard() {
         {/* Scoreline */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-xl border border-gray-200 bg-slate-50 px-2 py-5 dark:border-white/5 dark:bg-white/[0.02] sm:gap-4 sm:px-4">
           <TeamColumn
-            name={CLUB_NAME}
-            isClub
+            name={sides?.home.name ?? "Home"}
+            logoUrl={sides?.home.logoUrl}
+            isClub={sides?.home.isClub}
             value={homeScore}
             onChange={setHomeScore}
             disabled={fieldsDisabled}
@@ -335,8 +354,9 @@ export default function PredictorCard() {
             –
           </span>
           <TeamColumn
-            name={opponentName}
-            logoUrl={match?.opponent_logo_url}
+            name={sides?.away.name ?? "Away"}
+            logoUrl={sides?.away.logoUrl}
+            isClub={sides?.away.isClub}
             value={awayScore}
             onChange={setAwayScore}
             disabled={fieldsDisabled}

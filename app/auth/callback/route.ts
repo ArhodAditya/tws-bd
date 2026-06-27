@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
 // OAuth callback. Supabase (PKCE flow) redirects here with a `?code=...` which
@@ -28,14 +29,24 @@ export async function GET(request: Request) {
       const base =
         isLocalEnv || !forwardedHost ? origin : `https://${forwardedHost}`;
 
-      // Flag a *fresh* sign-in so the client can fire the welcome toast exactly
-      // once. After the OAuth round-trip the browser client only sees
-      // INITIAL_SESSION (not SIGNED_IN), so this server-set marker is the
-      // reliable signal. The toast strips `welcome` from the URL after greeting,
-      // so it never re-fires on reload.
-      const destination = new URL(next, base);
-      destination.searchParams.set("welcome", "1");
-      return NextResponse.redirect(destination);
+      // Signal a *fresh* sign-in to the client via a short-lived cookie, which
+      // the welcome toast reads through document.cookie. We use a cookie (not a
+      // ?welcome query param) because Vercel's static route caching was
+      // swallowing the query string across the OAuth redirect.
+      //
+      // - httpOnly MUST be false so document.cookie can read it client-side.
+      // - cookies() is async in this Next version, so it must be awaited;
+      //   `cookies().set(...)` would throw.
+      const cookieStore = await cookies();
+      cookieStore.set("tws_vip_welcome", "true", {
+        maxAge: 15,
+        path: "/",
+        httpOnly: false,
+        sameSite: "lax",
+      });
+
+      // Clean redirect to the (validated, internal) next path — no query string.
+      return NextResponse.redirect(new URL(next, base));
     }
   }
 

@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { ArrowRight, Crown } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 // Full-screen VIP welcome overlay. Fires exactly once per fresh login: the OAuth
-// callback redirects back with `?welcome=1`, which this component consumes (and
-// strips from the URL) before greeting the Madridista by name.
+// callback sets a short-lived `tws_vip_welcome` cookie, which this component
+// detects on mount (via document.cookie) and deletes immediately so it can't
+// re-fire on a refresh.
 //
-// Bulletproofing for the production session-hydration delay: the overlay is
-// guaranteed to appear within 500ms of `?welcome=1`, no matter how slow or
-// flaky the auth calls are. We try getSession() first (the local session, fast
-// right after a redirect), fall back to getUser() (networked) only if needed,
-// and a hard 500ms timeout forces a generic "Madridista" greeting if neither
-// has resolved. `useSearchParams()` is why the caller wraps this in <Suspense>.
+// Cookie (not a ?welcome query param) because Vercel's static route caching was
+// swallowing the query string across the OAuth redirect — the cookie is read at
+// runtime client-side and is immune to HTML caching. No useSearchParams, so no
+// Suspense boundary is required around this component.
+//
+// The overlay is guaranteed to appear within 500ms regardless of network: we
+// try getSession() (fast local read), fall back to getUser() if needed, and a
+// hard 500ms timeout forces a generic "Madridista" greeting otherwise.
 export default function WelcomeToast() {
-  const searchParams = useSearchParams();
   const handled = useRef(false);
 
   // `null` until resolved (by session lookup OR the 500ms fallback); gates the UI.
@@ -25,26 +26,17 @@ export default function WelcomeToast() {
 
   useEffect(() => {
     if (handled.current) return;
-    if (searchParams.get("welcome") !== "1") return;
+    if (!document.cookie.includes("tws_vip_welcome=true")) return;
     handled.current = true;
 
-    // Consume the marker immediately (keeping any other params) so a reload can
-    // never re-greet.
-    const url = new URL(window.location.href);
-    url.searchParams.delete("welcome");
-    window.history.replaceState(
-      null,
-      "",
-      url.pathname + url.search + url.hash
-    );
+    // Delete the cookie immediately so a refresh can never re-fire the toast.
+    document.cookie = "tws_vip_welcome=; Max-Age=0; path=/";
 
-    let active = true;
     let resolved = false;
     // Resolve the greeting exactly once — whichever of (session lookup) or the
-    // (hard 500ms fallback) wins first. This is what makes the toast appear
-    // regardless of network delays.
+    // (hard 500ms fallback) wins first.
     const resolve = (name: string) => {
-      if (!active || resolved) return;
+      if (resolved) return;
       resolved = true;
       setFirstName(name);
     };
@@ -78,11 +70,8 @@ export default function WelcomeToast() {
       resolve(name);
     })();
 
-    return () => {
-      active = false;
-      window.clearTimeout(fallback);
-    };
-  }, [searchParams]);
+    return () => window.clearTimeout(fallback);
+  }, []);
 
   // Auto-dismiss 5s after the overlay appears; Escape also closes it.
   useEffect(() => {
@@ -108,7 +97,9 @@ export default function WelcomeToast() {
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to The Whites Bangladesh"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300"
+      // z-[9999] + pointer-events-auto so the overlay dominates the screen and
+      // can never be hidden behind the navbar (z-50) or any other layer.
+      className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300"
     >
       {/* Dark, blurred backdrop — click anywhere to dismiss. */}
       <button

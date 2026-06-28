@@ -138,21 +138,22 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <span className="absolute left-3 top-3 rounded-full border border-gold-500/30 bg-midnight-950/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-300 backdrop-blur">
           {CATEGORY_LABEL[product.category as ShopCategory] ?? product.category}
         </span>
-        {/* Top-right stack: eye-catching promo tag, then the sold-out flag.
-            Capped width so a long badge wraps neatly in the corner instead of
-            spilling across the card and overlapping the title on mobile. */}
-        <div className="absolute right-3 top-3 flex max-w-[75%] flex-col items-end gap-1.5">
-          {product.badge_text ? (
-            <span className="max-w-[80%] break-words rounded-full bg-gradient-to-r from-red-500 to-rose-600 px-2 py-1 text-center text-[10px] font-extrabold uppercase leading-tight tracking-wide text-white shadow-lg shadow-red-500/40 ring-1 ring-white/25 sm:px-3 sm:text-[11px]">
-              {product.badge_text}
-            </span>
-          ) : null}
-          {!product.in_stock ? (
-            <span className="rounded-full bg-midnight-950/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/15 backdrop-blur">
-              Sold Out
-            </span>
-          ) : null}
-        </div>
+        {/* Premium promo tag — a sleek gold pill floating over the top-right of
+            the jersey image. Stays on a single line and truncates with an
+            ellipsis instead of wrapping. It lives inside the <Link>, so tapping
+            it still navigates to the product page. */}
+        {product.badge_text ? (
+          <span className="absolute right-2 top-2 z-10 max-w-[75%] truncate rounded-full bg-gradient-to-r from-yellow-600 to-yellow-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-lg md:right-3 md:top-3 md:px-3 md:py-1 md:text-[11px]">
+            {product.badge_text}
+          </span>
+        ) : null}
+        {/* Sold-out flag — pinned bottom-right so it never collides with the
+            promo tag above. */}
+        {!product.in_stock ? (
+          <span className="absolute bottom-2 right-2 z-10 rounded-full bg-midnight-950/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/15 backdrop-blur">
+            Sold Out
+          </span>
+        ) : null}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="line-clamp-2 font-semibold leading-snug text-slate-900 dark:text-white">

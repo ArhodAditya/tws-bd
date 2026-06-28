@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Newspaper, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import { createClient } from "@/utils/supabase/server";
 import {
   MOCK_ARTICLES,
@@ -154,7 +155,12 @@ export default async function ArticlePage({
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         {content ? (
           <div className="prose prose-lg max-w-none text-midnight-800/80 prose-headings:font-display prose-headings:text-midnight-900 prose-p:text-midnight-800/80 prose-strong:text-midnight-900 prose-a:font-medium prose-a:text-gold-700 hover:prose-a:text-gold-600 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:shadow-md">
-            <ReactMarkdown>{content}</ReactMarkdown>
+            {/* remark-breaks turns a single newline (Enter in the editor) into a
+                hard <br>, so line breaks the admin types render on the live site
+                instead of being collapsed into a space by standard Markdown. */}
+            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+              {content}
+            </ReactMarkdown>
           </div>
         ) : (
           <p className="text-midnight-800/60">Full story coming soon.</p>

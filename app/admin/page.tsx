@@ -6,6 +6,7 @@ import {
   CalendarClock,
   FileText,
   Megaphone,
+  Newspaper,
   RadioTower,
   ShieldCheck,
   ShoppingBag,
@@ -86,6 +87,27 @@ export default async function AdminPage() {
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
               Open editor
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+
+          {/* Manage News */}
+          <Link
+            href="/admin/articles"
+            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
+              <Newspaper className="h-5 w-5" />
+            </span>
+            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+              Manage News
+            </h2>
+            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+              Review every published article, jump in to edit a story, or delete
+              one — it disappears from the site the moment you confirm.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
+              Open news manager
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>

@@ -58,6 +58,27 @@ export async function setLeaderboardVisibility(
   return { success: true };
 }
 
+// Permanently delete a news article. Uses the service-role client so an admin
+// can remove *any* article regardless of articles RLS (which typically scopes
+// deletes to the author). Admin status is re-verified above — Server Actions
+// are reachable via direct POST, so the page gate alone is never enough.
+export async function deleteArticle(id: string): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("articles").delete().eq("id", id);
+
+  if (error) return { success: false, message: error.message };
+
+  // Clear every cache the article appears in so it disappears immediately:
+  // the news index, the homepage "Latest News" teaser, and the admin list.
+  revalidatePath("/news");
+  revalidatePath("/");
+  revalidatePath("/admin/articles");
+  return { success: true };
+}
+
 // Triggers the football sync route from the admin dashboard. The CRON_SECRET
 // never reaches the browser: it's read server-side here and sent as the Bearer
 // token on a server-to-server fetch to our own /api/cron/sync-football route.

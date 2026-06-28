@@ -104,6 +104,43 @@ body {
   will-change: opacity, transform;
 }
 
+/* Gentle vertical float — used on the homepage Shop CTA button for a lively,
+   premium feel. Decorative only, so it's disabled under reduced-motion. */
+@keyframes tws-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-float {
+  animation: tws-float 3.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Slow, continuous rolling spin — used on the decorative footballs in the Shop
+   trust banner so a ball reads as gently rolling in place. Two speeds: the
+   accent balls roll, the big background balls drift slower. Decorative only, so
+   both are frozen under reduced-motion. */
+@keyframes tws-roll {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-roll {
+  animation: tws-roll 9s linear infinite;
+  will-change: transform;
+}
+.animate-roll-slow {
+  animation: tws-roll 24s linear infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .reveal.is-visible {
@@ -118,8 +155,12 @@ body {
     animation: none !important;
   }
 
-  /* Freeze the decorative glow for users who prefer reduced motion. */
-  .animate-glow {
+  /* Freeze the decorative glow + float + rolling footballs for users who prefer
+     reduced motion. */
+  .animate-glow,
+  .animate-float,
+  .animate-roll,
+  .animate-roll-slow {
     animation: none;
   }
 }

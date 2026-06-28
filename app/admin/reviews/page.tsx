@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, MessageSquareQuote } from "lucide-react";
+import { ArrowLeft, Megaphone } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import TestimonialAdmin from "@/components/TestimonialAdmin";
-import type { Testimonial } from "@/lib/testimonials";
+import { createAdminClient } from "@/utils/supabase/admin";
+import ReviewModerationList from "@/components/ReviewModerationList";
+import AdminManualReviewForm from "@/components/AdminManualReviewForm";
+import type { FanReviewWithAuthor } from "@/lib/fan-reviews";
 
 export const metadata: Metadata = {
-  title: "Testimonials — Admin — The Whites Bangladesh",
+  title: "Fan Reviews — Admin — The Whites Bangladesh",
 };
 
-export default async function AdminTestimonialsPage() {
+export default async function AdminReviewsPage() {
   const supabase = await createClient();
 
   // Auth gate: getUser() validates the token with Supabase (not just the cookie).
@@ -22,7 +24,7 @@ export default async function AdminTestimonialsPage() {
     redirect("/");
   }
 
-  // Strict role gate: only admins may manage testimonials.
+  // Strict role gate: only admins may moderate reviews.
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -33,14 +35,18 @@ export default async function AdminTestimonialsPage() {
     redirect("/");
   }
 
+  // Use the service-role client so every review — including the pending ones —
+  // is visible to the admin regardless of RLS. (The page itself is gated above.)
   // If the table doesn't exist yet this errors and `data` is null — the manager
   // then shows a graceful empty state.
-  const { data } = await supabase
-    .from("site_testimonials")
-    .select("*")
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("fan_reviews")
+    .select("*, profiles(full_name, avatar_url)")
     .order("created_at", { ascending: false });
 
-  const testimonials: Testimonial[] = data ?? [];
+  const reviews: FanReviewWithAuthor[] =
+    (data as FanReviewWithAuthor[] | null) ?? [];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-midnight-950">
@@ -59,26 +65,28 @@ export default async function AdminTestimonialsPage() {
             Back to Dashboard
           </Link>
           <div className="mt-6 flex items-center gap-2 text-gold-300">
-            <MessageSquareQuote className="h-5 w-5" />
+            <Megaphone className="h-5 w-5" />
             <span className="text-xs font-semibold uppercase tracking-[0.25em]">
               Fan Voices
             </span>
           </div>
           <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Manage Testimonials
+            Moderate Reviews
           </h1>
           <p className="mt-3 max-w-xl text-zinc-300">
-            Add and remove the fan reviews shown in the “Voices of the
-            Madridistas” section on the About page.
+            Approve fan-submitted reviews to publish them on the “Voices of the
+            Madridistas” wall in the Fans Zone. Toggle any review off to pull it
+            back down instantly.
           </p>
         </div>
       </header>
 
-      {/* Manager */}
-      <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
+      {/* Manual entry + moderation queue */}
+      <div className="mx-auto max-w-3xl space-y-8 px-4 pb-16 sm:px-6 lg:px-8">
         <div className="-mt-6">
-          <TestimonialAdmin testimonials={testimonials} />
+          <AdminManualReviewForm />
         </div>
+        <ReviewModerationList reviews={reviews} />
       </div>
     </div>
   );

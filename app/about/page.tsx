@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Crown, MessagesSquare, Quote, Sparkles } from "lucide-react";
+import { Crown, Quote, Sparkles } from "lucide-react";
 import Reveal from "@/components/Reveal";
-import TestimonialCard from "@/components/TestimonialCard";
-import { createClient } from "@/utils/supabase/server";
-import type { Testimonial } from "@/lib/testimonials";
 
 export const metadata: Metadata = {
   title: "About — The Whites Bangladesh",
@@ -47,19 +44,7 @@ const TIMELINE: { date: string; body: string }[] = [
   },
 ];
 
-export default async function AboutPage() {
-  const supabase = await createClient();
-
-  // Fan testimonials power the "Voices of the Madridistas" wall, newest first.
-  // If the table is missing this errors and `data` is null — the section then
-  // renders a graceful empty state rather than crashing the page.
-  const { data } = await supabase
-    .from("site_testimonials")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  const testimonials: Testimonial[] = data ?? [];
-
+export default function AboutPage() {
   return (
     <div className="bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-white">
       {/* Without JS the IntersectionObserver never runs, so force every reveal
@@ -186,48 +171,6 @@ export default async function AboutPage() {
             </figcaption>
           </figure>
         </Reveal>
-      </section>
-
-      {/* ===== Voices of the Madridistas: fan testimonials ===== */}
-      <section className="relative overflow-hidden border-t border-gray-200 bg-slate-100 dark:border-white/5 dark:bg-midnight-900/40">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -bottom-32 right-1/4 h-80 w-80 rounded-full bg-gold-500/5 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-          <Reveal className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-700 dark:text-gold-300">
-              <MessagesSquare className="h-3.5 w-3.5" />
-              Fan Voices
-            </span>
-            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
-              <span className="text-gradient-gold">
-                Voices of the Madridistas
-              </span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-zinc-300">
-              The real heartbeat of The Whites Bangladesh.
-            </p>
-          </Reveal>
-
-          {testimonials.length > 0 ? (
-            <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {testimonials.map((testimonial, index) => (
-                <TestimonialCard
-                  key={testimonial.id}
-                  testimonial={testimonial}
-                  index={index}
-                />
-              ))}
-            </div>
-          ) : (
-            <Reveal className="mt-12 text-center">
-              <p className="text-slate-500 dark:text-zinc-400">
-                The first voices are on their way. ¡Hala Madrid!
-              </p>
-            </Reveal>
-          )}
-        </div>
       </section>
     </div>
   );

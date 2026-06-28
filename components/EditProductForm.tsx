@@ -33,6 +33,7 @@ export default function EditProductForm({ product }: { product: Product }) {
   );
   const [images, setImages] = useState<string[]>(product.images ?? []);
   const [sizes, setSizes] = useState((product.sizes ?? []).join(", "));
+  const [badgeText, setBadgeText] = useState(product.badge_text ?? "");
   const [inStock, setInStock] = useState(product.in_stock);
   const [isActive, setIsActive] = useState(product.is_active);
 
@@ -64,6 +65,7 @@ export default function EditProductForm({ product }: { product: Product }) {
         category,
         images,
         sizes: toList(sizes),
+        badge_text: badgeText.trim() || null,
         in_stock: inStock,
         is_active: isActive,
       })
@@ -186,6 +188,25 @@ export default function EditProductForm({ product }: { product: Product }) {
           value={sizes}
           onChange={(e) => setSizes(e.target.value)}
           placeholder="S, M, L, XL"
+          className={inputClass}
+        />
+      </div>
+
+      {/* Promo Badge / Tag */}
+      <div className="space-y-2">
+        <label htmlFor="badge_text" className={labelClass}>
+          Promo Badge / Tag{" "}
+          <span className="font-normal text-midnight-900/40">
+            (optional — shown on the product card)
+          </span>
+        </label>
+        <input
+          id="badge_text"
+          type="text"
+          value={badgeText}
+          maxLength={24}
+          onChange={(e) => setBadgeText(e.target.value)}
+          placeholder="15% OFF, HOT, NEW DROP…"
           className={inputClass}
         />
       </div>

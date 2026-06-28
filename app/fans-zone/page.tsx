@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, ShieldHalf, Users } from "lucide-react";
+import { ArrowRight, MessagesSquare, ShieldHalf, Sparkles, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { fetchPredictorSettings } from "@/lib/predictor-settings";
+import { type FanReviewWithAuthor } from "@/lib/fan-reviews";
 import PredictorCard from "@/components/PredictorCard";
 import PredictorOffline from "@/components/PredictorOffline";
 import Leaderboard from "@/components/Leaderboard";
+import Reveal from "@/components/Reveal";
+import FanReviewCard from "@/components/FanReviewCard";
+import FanReviewForm from "@/components/FanReviewForm";
 
 export const metadata: Metadata = {
   title: "Fans Zone — The Whites Bangladesh",
@@ -34,6 +38,19 @@ export default async function FansZonePage() {
   // a premium offline card instead of the predictor (or its sample fallback).
   const supabase = await createClient();
   const predictorSettings = await fetchPredictorSettings(supabase);
+
+  // Approved fan reviews power the "Voices of the Madridistas" wall, newest
+  // first. RLS only ever returns approved rows here; if the table is missing
+  // this errors and `data` is null — the section then shows its empty state.
+  const { data: reviewData } = await supabase
+    .from("fan_reviews")
+    .select("*, profiles(full_name, avatar_url)")
+    .eq("is_approved", true)
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  const reviews: FanReviewWithAuthor[] =
+    (reviewData as FanReviewWithAuthor[] | null) ?? [];
 
   return (
     <div className="relative overflow-hidden bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-white">
@@ -100,6 +117,51 @@ export default async function FansZonePage() {
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </span>
         </Link>
+
+        {/* ===== Voices of the Madridistas — user-submitted reviews ===== */}
+        <section className="mt-16 sm:mt-20">
+          <Reveal className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-700 dark:text-gold-300">
+              <MessagesSquare className="h-3.5 w-3.5" />
+              Fan Voices
+            </span>
+            <h2 className="mt-5 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+              <span className="text-gradient-gold">
+                Voices of the Madridistas
+              </span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-zinc-300">
+              The real heartbeat of The Whites Bangladesh — straight from the
+              fans.
+            </p>
+          </Reveal>
+
+          {/* Submission box */}
+          <FanReviewForm />
+
+          {/* The wall — approved reviews, or a cool empty state */}
+          {reviews.length > 0 ? (
+            <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((review, index) => (
+                <Reveal key={review.id} delay={index * 80}>
+                  <FanReviewCard review={review} />
+                </Reveal>
+              ))}
+            </div>
+          ) : (
+            <Reveal className="mx-auto mt-12 max-w-md text-center">
+              <span className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-gold-500/30 bg-gradient-to-br from-gold-300/20 to-gold-600/10 text-gold-600 shadow-[0_0_40px_-10px_rgba(212,175,55,0.8)] dark:text-gold-300">
+                <MessagesSquare className="h-8 w-8" strokeWidth={2} />
+                <Sparkles className="absolute -right-1.5 -top-1.5 h-5 w-5 text-gold-400" />
+              </span>
+              <p className="mt-6 text-base font-semibold leading-relaxed text-slate-700 dark:text-zinc-100">
+                No voices on the wall yet — be the first Madridista to speak it
+                into existence. 🤍✨
+              </p>
+              <span className="mx-auto mt-7 block h-px w-20 bg-gradient-to-r from-transparent via-gold-500/50 to-transparent" />
+            </Reveal>
+          )}
+        </section>
       </div>
     </div>
   );

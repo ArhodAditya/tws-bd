@@ -63,6 +63,42 @@ export type Database = {
           },
         ];
       };
+      fan_reviews: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          is_approved: boolean;
+          review_text: string;
+          // Nullable so admins can post manual reviews not tied to a user.
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          is_approved?: boolean;
+          review_text: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          is_approved?: boolean;
+          review_text?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fan_reviews_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       matches: {
         Row: {
           api_fixture_id: number | null;
@@ -290,6 +326,7 @@ export type Database = {
       };
       products: {
         Row: {
+          badge_text: string | null;
           category: string;
           created_at: string;
           description: string | null;
@@ -302,6 +339,7 @@ export type Database = {
           sizes: string[];
         };
         Insert: {
+          badge_text?: string | null;
           category?: string;
           created_at?: string;
           description?: string | null;
@@ -314,6 +352,7 @@ export type Database = {
           sizes?: string[];
         };
         Update: {
+          badge_text?: string | null;
           category?: string;
           created_at?: string;
           description?: string | null;

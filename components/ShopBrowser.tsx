@@ -135,15 +135,17 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           product={product}
           className="h-full w-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
         />
-        <span className="absolute left-3 top-3 rounded-full border border-gold-500/30 bg-midnight-950/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-300 backdrop-blur">
+        {/* Category pill — pinned strictly to the top-left so the promo badge
+            (top-right) can never collide with it. */}
+        <span className="absolute left-2 top-2 z-10 rounded-full border border-gold-500/30 bg-midnight-950/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-300 backdrop-blur md:left-3 md:top-3">
           {CATEGORY_LABEL[product.category as ShopCategory] ?? product.category}
         </span>
-        {/* Premium promo tag — a sleek gold pill floating over the top-right of
-            the jersey image. Stays on a single line and truncates with an
-            ellipsis instead of wrapping. It lives inside the <Link>, so tapping
-            it still navigates to the product page. */}
+        {/* Premium promo tag — a sleek gold pill in the top-right corner. Capped
+            to the right half of the card so it stays clear of the category pill,
+            wrapping cleanly (centered) if the text runs long. It lives inside
+            the <Link>, so tapping it still navigates to the product page. */}
         {product.badge_text ? (
-          <span className="absolute right-2 top-2 z-10 max-w-[75%] truncate rounded-full bg-gradient-to-r from-yellow-600 to-yellow-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-lg md:right-3 md:top-3 md:px-3 md:py-1 md:text-[11px]">
+          <span className="absolute top-2 right-2 md:top-3 md:right-3 z-20 bg-gradient-to-r from-yellow-500 to-yellow-400 text-zinc-950 font-black uppercase tracking-wider rounded-full shadow-[0_4px_10px_rgba(234,179,8,0.3)] text-[8px] md:text-[10px] px-2.5 py-1 md:px-3 md:py-1.5 max-w-[50%] md:max-w-[60%] text-center leading-tight shadow-lg">
             {product.badge_text}
           </span>
         ) : null}

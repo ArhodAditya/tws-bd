@@ -111,10 +111,16 @@ export default async function ShopPage() {
           </p>
         </header>
 
-        {/* ===== Social Proof / Trust Banner ===== */}
+        {/* Product grid entrance animation */}
+        <div className="animate-in fade-in slide-in-from-bottom-10 duration-1000 fill-mode-both">
+          <ShopBrowser products={products} />
+        </div>
+
+        {/* ===== Social Proof / Trust Banner — sits below the product grid so
+            the gear leads and the social proof reinforces it. ===== */}
         <section
           aria-label="Why Madridistas trust The Whites Bangladesh"
-          className="mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both"
+          className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both"
         >
           {/* Cinematic glass panel: deep gradient, glowing gold border, heavy blur */}
           <div className="relative overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-br from-zinc-950/80 via-midnight-950/70 to-zinc-950/80 p-6 shadow-[0_0_60px_-15px_rgba(212,175,55,0.4)] backdrop-blur-md sm:p-8 lg:p-10">
@@ -165,11 +171,6 @@ export default async function ShopPage() {
             </div>
           </div>
         </section>
-
-        {/* Product grid entrance animation */}
-        <div className="animate-in fade-in slide-in-from-bottom-10 duration-1000 fill-mode-both">
-          <ShopBrowser products={products} />
-        </div>
       </div>
     </div>
     </>

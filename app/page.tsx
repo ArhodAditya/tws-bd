@@ -129,7 +129,7 @@ export default async function Home() {
       {/* Hero — image-backed, cinematic dark aesthetic. /hero-bg.png sits under
           a heavy zinc-950 gradient overlay so the white copy stays fully
           readable no matter what the photo looks like. */}
-      <section className="relative overflow-hidden bg-zinc-950 bg-[url('/hero-bg.png')] bg-cover bg-center bg-no-repeat text-white">
+      <section className="relative flex min-h-[80vh] items-center overflow-hidden bg-zinc-950 bg-[url('/hero-bg.png')] bg-cover bg-[position:center_top] bg-no-repeat text-white sm:bg-center">
         {/* Heavy dark overlay for the premium, readable cinematic fade */}
         <div
           aria-hidden
@@ -141,7 +141,7 @@ export default async function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(212,175,55,0.14),transparent_60%)]" />
         </div>
 
-        <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 py-24 text-center sm:px-6 sm:py-32 lg:px-8">
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-24 text-center sm:px-6 sm:py-32 lg:px-8">
           <span
             className={`${entrance} mb-6 inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-300`}
           >

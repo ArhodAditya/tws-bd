@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  Droplets,
   Dumbbell,
   Info,
   RotateCcw,
@@ -366,13 +367,36 @@ export default function ProductDetail({
                 after your order is confirmed on WhatsApp. Cash on delivery is
                 available nationwide. 🤍
               </p>
+              <p className="mt-3">
+                Please note: It can take up to 7-15 days for products which are
+                on pre-order.
+              </p>
             </Accordion>
             <Accordion icon={RotateCcw} title="Returns">
               <p>
-                Every piece is quality-checked before dispatch. Sizing exchanges
-                are accepted within 3 days of delivery — the item must be unused
-                with tags intact. Just message us on WhatsApp to arrange it.
+                Every piece is strictly quality-checked before dispatch. Please
+                note that no returns or exchanges are accepted for sizing issues,
+                so be sure to review the size guide carefully before placing your
+                order. If you receive a defective or incorrect item, return
+                requests must be made within 24 hours of delivery. The item must
+                remain unused with all original tags intact. Just message us on
+                WhatsApp to arrange it.
               </p>
+            </Accordion>
+            <Accordion icon={Droplets} title="Wash Care Guide (Player Edition)">
+              <p>
+                A-Grade Player Edition jerseys feature delicate, heat-pressed
+                logos and numbers. To ensure longevity:
+              </p>
+              <ol className="mt-3 list-decimal space-y-1.5 pl-5">
+                <li>Always turn the jersey inside out before washing.</li>
+                <li>Hand wash or use a gentle, cold machine cycle.</li>
+                <li>
+                  Do NOT soak in water for long periods or use heavy
+                  detergents/fabric softeners, as this will peel the prints.
+                </li>
+                <li>Air dry only—never tumble dry or iron over the prints.</li>
+              </ol>
             </Accordion>
           </div>
 

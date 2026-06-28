@@ -136,10 +136,9 @@ export default async function FansZonePage() {
             </p>
           </Reveal>
 
-          {/* Submission box */}
-          <FanReviewForm />
-
-          {/* The wall — approved reviews, or a cool empty state */}
+          {/* The wall — approved reviews, or a cool empty state. Shown first so
+              fans read the community's stories before being prompted to add
+              their own. */}
           {reviews.length > 0 ? (
             <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {reviews.map((review, index) => (
@@ -161,6 +160,10 @@ export default async function FansZonePage() {
               <span className="mx-auto mt-7 block h-px w-20 bg-gradient-to-r from-transparent via-gold-500/50 to-transparent" />
             </Reveal>
           )}
+
+          {/* Submission box — placed after the wall so the community reads
+              before they write. */}
+          <FanReviewForm />
         </section>
       </div>
     </div>

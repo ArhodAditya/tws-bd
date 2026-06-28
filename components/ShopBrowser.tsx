@@ -138,10 +138,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <span className="absolute left-3 top-3 rounded-full border border-gold-500/30 bg-midnight-950/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-300 backdrop-blur">
           {CATEGORY_LABEL[product.category as ShopCategory] ?? product.category}
         </span>
-        {/* Top-right stack: eye-catching promo tag, then the sold-out flag. */}
-        <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
+        {/* Top-right stack: eye-catching promo tag, then the sold-out flag.
+            Capped width so a long badge wraps neatly in the corner instead of
+            spilling across the card and overlapping the title on mobile. */}
+        <div className="absolute right-3 top-3 flex max-w-[75%] flex-col items-end gap-1.5">
           {product.badge_text ? (
-            <span className="rounded-full bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-lg shadow-red-500/40 ring-1 ring-white/25">
+            <span className="max-w-[80%] break-words rounded-full bg-gradient-to-r from-red-500 to-rose-600 px-2 py-1 text-center text-[10px] font-extrabold uppercase leading-tight tracking-wide text-white shadow-lg shadow-red-500/40 ring-1 ring-white/25 sm:px-3 sm:text-[11px]">
               {product.badge_text}
             </span>
           ) : null}

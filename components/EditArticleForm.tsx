@@ -3,16 +3,15 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LoaderCircle, Save } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
 import ArticleBodyEditor from "@/components/ArticleBodyEditor";
+import { updateArticle } from "@/app/admin/actions";
 import { slugify, type Article } from "@/lib/articles";
 
 const CATEGORIES = ["news", "breaking", "analysis", "report"] as const;
 
 export default function EditArticleForm({ article }: { article: Article }) {
   const router = useRouter();
-  const [supabase] = useState(() => createClient());
 
   const [title, setTitle] = useState(article.title ?? "");
   const [slug, setSlug] = useState(article.slug ?? "");
@@ -40,19 +39,20 @@ export default function EditArticleForm({ article }: { article: Article }) {
     }
 
     setLoading(true);
-    const { error: updateError } = await supabase
-      .from("articles")
-      .update({
-        title: title.trim(),
-        slug: finalSlug,
-        category,
-        image_url: imageUrl.trim() || null,
-        content,
-      })
-      .eq("id", article.id);
+    // Submit through the service-role Server Action rather than the browser
+    // (anon) client — articles RLS scopes UPDATE to the author, so an admin
+    // editing someone else's post would silently match zero rows here.
+    const result = await updateArticle({
+      id: article.id,
+      title: title.trim(),
+      slug: finalSlug,
+      category,
+      image_url: imageUrl.trim() || null,
+      content,
+    });
 
-    if (updateError) {
-      setError(updateError.message);
+    if (!result.success) {
+      setError(result.message ?? "Failed to save changes.");
       setLoading(false);
       return;
     }

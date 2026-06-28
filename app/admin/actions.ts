@@ -16,8 +16,10 @@ export type ActionResult = {
 };
 
 // Re-verify the caller is an admin. Server Actions are reachable via direct
-// POST, so the page gate alone is never enough.
-async function requireAdmin(): Promise<ActionResult> {
+// POST, so the page gate alone is never enough. Returns the authenticated
+// user's id on success so callers can attribute writes (e.g. an article's
+// author_id) to the session rather than trusting a client-supplied value.
+async function requireAdmin(): Promise<ActionResult & { userId?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,7 +34,7 @@ async function requireAdmin(): Promise<ActionResult> {
   if (profile?.role !== "admin") {
     return { success: false, message: "Admins only." };
   }
-  return { success: true };
+  return { success: true, userId: user.id };
 }
 
 // Toggle whether a user appears on the public Fan Zone leaderboard. Uses the
@@ -77,6 +79,103 @@ export async function deleteArticle(id: string): Promise<ActionResult> {
   revalidatePath("/");
   revalidatePath("/admin/articles");
   return { success: true };
+}
+
+export type UpdateArticleInput = {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  image_url: string | null;
+  content: string;
+};
+
+// Update an existing news article. Routed through the service-role client on
+// purpose: the public Edit form previously wrote with the browser (anon) client,
+// and articles RLS scopes UPDATE to the author — so an admin editing *another*
+// author's post matched zero rows and Supabase returned `error: null`, making
+// the save silently no-op. The admin client bypasses RLS, and we re-verify the
+// admin role above (Server Actions are reachable via direct POST).
+export async function updateArticle(
+  input: UpdateArticleInput
+): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  // `.select()` lets us detect a 0-row update instead of reporting a false
+  // success — the exact silent failure this action exists to fix.
+  const { data, error } = await admin
+    .from("articles")
+    .update({
+      title: input.title,
+      slug: input.slug,
+      category: input.category,
+      image_url: input.image_url,
+      content: input.content,
+    })
+    .eq("id", input.id)
+    .select("id");
+
+  if (error) return { success: false, message: error.message };
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      message: "No article was updated — it may have been removed.",
+    };
+  }
+
+  // Flush every surface the article appears on so the fresh content shows
+  // immediately: the news index, homepage teaser, the article page itself
+  // (both the literal slug and the dynamic route), and the admin list.
+  revalidatePath("/news");
+  revalidatePath("/");
+  revalidatePath(`/news/${input.slug}`);
+  revalidatePath("/news/[slug]", "page");
+  revalidatePath("/admin/articles");
+  return { success: true };
+}
+
+export type CreateArticleInput = {
+  title: string;
+  slug: string;
+  category: string;
+  image_url: string | null;
+  content: string;
+};
+
+// Publish a new article. Mirrors updateArticle: the insert runs on the
+// service-role client (consistent write path, immune to articles RLS), gated by
+// requireAdmin. The author_id is taken from the verified session — never from
+// the client — and we return the inserted slug so the form can route to the
+// freshly published article.
+export async function createArticle(
+  input: CreateArticleInput
+): Promise<ActionResult & { slug?: string }> {
+  const gate = await requireAdmin();
+  if (!gate.success || !gate.userId) return gate;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("articles")
+    .insert({
+      title: input.title,
+      slug: input.slug,
+      category: input.category,
+      image_url: input.image_url,
+      content: input.content,
+      author_id: gate.userId,
+    })
+    .select("slug")
+    .single();
+
+  if (error) return { success: false, message: error.message };
+
+  // Surface the new post everywhere it appears immediately.
+  revalidatePath("/news");
+  revalidatePath("/");
+  revalidatePath("/admin/articles");
+  return { success: true, slug: data?.slug ?? input.slug };
 }
 
 // Triggers the football sync route from the admin dashboard. The CRON_SECRET

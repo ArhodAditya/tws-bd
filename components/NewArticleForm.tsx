@@ -3,22 +3,19 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LoaderCircle, Send } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
 import ArticleBodyEditor from "@/components/ArticleBodyEditor";
+import { createArticle } from "@/app/admin/actions";
 import { slugify } from "@/lib/articles";
 
 const CATEGORIES = ["news", "breaking", "analysis", "report"] as const;
 
 export default function NewArticleForm({
-  userId,
   authorName,
 }: {
-  userId: string;
   authorName: string;
 }) {
   const router = useRouter();
-  const [supabase] = useState(() => createClient());
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -52,24 +49,26 @@ export default function NewArticleForm({
     }
 
     setLoading(true);
-    const { error: insertError } = await supabase.from("articles").insert({
+    // Publish through the service-role Server Action (consistent, RLS-proof
+    // write path); author_id is derived from the verified session there.
+    const result = await createArticle({
       title: title.trim(),
       slug: finalSlug,
       category,
       image_url: imageUrl.trim() || null,
       content,
-      author_id: userId,
     });
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!result.success) {
+      setError(result.message ?? "Failed to publish the article.");
       setLoading(false);
       return;
     }
 
-    // Straight to the freshly published article. Keep `loading` true so the
-    // button stays disabled while the navigation happens.
-    router.push(`/news/${finalSlug}`);
+    // Straight to the freshly published article, using the slug the server
+    // actually saved. Keep `loading` true so the button stays disabled while
+    // the navigation happens.
+    router.push(`/news/${result.slug ?? finalSlug}`);
     router.refresh();
   };
 

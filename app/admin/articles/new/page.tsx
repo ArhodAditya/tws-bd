@@ -73,7 +73,7 @@ export default async function NewArticlePage() {
       {/* Form */}
       <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="-mt-6">
-          <NewArticleForm userId={user.id} authorName={authorName} />
+          <NewArticleForm authorName={authorName} />
         </div>
       </div>
     </div>

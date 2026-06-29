@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { isSuperAdmin } from "@/lib/admin";
 
 export type SyncResult = {
   success: boolean;
@@ -176,6 +177,88 @@ export async function createArticle(
   revalidatePath("/");
   revalidatePath("/admin/articles");
   return { success: true, slug: data?.slug ?? input.slug };
+}
+
+// Basic email shape check. We deliberately accept any provider (not just
+// gmail.com) — the target admin may use any address; only the *caller* is
+// restricted to the super-admin.
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Resolve an auth user's id from their email. profiles has no email column, so
+// the lookup goes through the GoTrue admin API (service-role only). listUsers is
+// paginated and has no email filter, so we page through until we find a match.
+async function findAuthUserIdByEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  email: string
+): Promise<string | null> {
+  const perPage = 1000;
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(error.message);
+    const users = data?.users ?? [];
+    const match = users.find((u) => (u.email ?? "").toLowerCase() === email);
+    if (match) return match.id;
+    // Last page reached — stop paging.
+    if (users.length < perPage) break;
+  }
+  return null;
+}
+
+// Promote the user with the given email to admin.
+//
+// SECURITY: this is the privileged operation, so it is gated twice. The hard
+// gate below *throws* if the caller is not the super-admin — Server Actions are
+// reachable via direct POST, so this guarantees the rule even if someone bypasses
+// the UI entirely. The target account must already exist (have signed in once),
+// because a profile row is keyed to an auth user.
+export async function addAdminByEmail(email: string): Promise<ActionResult> {
+  // Hard super-admin gate. Only senguptaaditya47@gmail.com may reach this.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!isSuperAdmin(user?.email)) {
+    throw new Error("Unauthorized: Super-Admin access only.");
+  }
+
+  const target = email.trim().toLowerCase();
+  if (!isValidEmail(target)) {
+    return { success: false, message: "Please enter a valid email address." };
+  }
+
+  const admin = createAdminClient();
+
+  const userId = await findAuthUserIdByEmail(admin, target);
+  if (!userId) {
+    return {
+      success: false,
+      message:
+        "No account found for that email. Ask them to sign in once first, then try again.",
+    };
+  }
+
+  // Promote the existing profile; insert one if the row is somehow missing.
+  // `.select()` lets us tell an applied update apart from a 0-row no-op.
+  const { data: updated, error: updateError } = await admin
+    .from("profiles")
+    .update({ role: "admin" })
+    .eq("id", userId)
+    .select("id");
+  if (updateError) return { success: false, message: updateError.message };
+
+  if (!updated || updated.length === 0) {
+    const { error: insertError } = await admin
+      .from("profiles")
+      .insert({ id: userId, role: "admin" });
+    if (insertError) return { success: false, message: insertError.message };
+  }
+
+  // Refresh the admin views that display roles.
+  revalidatePath("/admin/admins");
+  revalidatePath("/admin/users");
+  return { success: true, message: `${target} is now an admin.` };
 }
 
 // Triggers the football sync route from the admin dashboard. The CRON_SECRET

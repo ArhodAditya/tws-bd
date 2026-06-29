@@ -32,6 +32,26 @@ export function formatPrice(price: number | null): string {
   return `৳${(price ?? 0).toLocaleString("en-US")}`;
 }
 
+// Plain-text product summary for meta descriptions and structured data: strip
+// Markdown markers, collapse whitespace and clamp. Falls back to a branded line
+// when the product has no description. `maxLength` defaults to ~150 (good for
+// meta descriptions); pass a larger value for fuller JSON-LD descriptions.
+export function getProductDescription(
+  product: Pick<Product, "name" | "description">,
+  maxLength = 150
+): string {
+  const summary = (product.description ?? "")
+    .replace(/[#>*_`~[\]()!-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
+  return (
+    summary ||
+    `Order the ${product.name} from The Whites Bangladesh. ¡Hala Madrid!`
+  );
+}
+
 // Fallback used only if NEXT_PUBLIC_WHATSAPP_NUMBER isn't configured. Clearly a
 // placeholder so a misconfigured deploy is obvious rather than silently wrong.
 export const FALLBACK_WHATSAPP_NUMBER = "880000000000";

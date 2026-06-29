@@ -12,7 +12,9 @@ import {
   formatArticleDate,
   getExcerpt,
 } from "@/lib/articles";
+import { SITE_LOGO, SITE_NAME, SITE_URL } from "@/lib/site";
 import { AuthorMeta, CategoryBadge } from "@/components/NewsCard";
+import JsonLd from "@/components/JsonLd";
 
 type ArticleParams = { slug: string };
 
@@ -44,9 +46,30 @@ export async function generateMetadata({
     return { title: "Article Not Found — The Whites Bangladesh" };
   }
 
+  const description = getExcerpt(article.content) || undefined;
+  const title = article.title ?? SITE_NAME;
+  // Articles store a single Cloudinary image_url; fall back to the brand logo.
+  const ogImage = article.image_url ?? SITE_LOGO;
+
   return {
-    title: `${article.title} — The Whites Bangladesh`,
-    description: getExcerpt(article.content) || undefined,
+    title: `${title} — The Whites Bangladesh`,
+    description,
+    alternates: { canonical: `/news/${slug}` },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: `${SITE_URL}/news/${slug}`,
+      siteName: SITE_NAME,
+      publishedTime: article.created_at,
+      images: [{ url: ogImage }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -82,8 +105,29 @@ export default async function ArticlePage({
 
   const content = (article.content ?? "").trim();
 
+  // NewsArticle structured data — helps the page surface in Google News /
+  // Discover. Author is the publication per brand convention.
+  const articleUrl = `${SITE_URL}/news/${article.slug}`;
+  const newsSchema = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.title ?? SITE_NAME,
+    description: getExcerpt(article.content) || undefined,
+    image: article.image_url ? [article.image_url] : [SITE_LOGO],
+    datePublished: article.created_at,
+    dateModified: article.created_at,
+    author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      logo: { "@type": "ImageObject", url: SITE_LOGO },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+  };
+
   return (
     <article className="bg-white">
+      <JsonLd data={newsSchema} />
       {/* Header */}
       <header className="relative overflow-hidden bg-midnight-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">

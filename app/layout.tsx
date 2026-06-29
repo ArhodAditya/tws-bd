@@ -8,6 +8,7 @@ import CartDrawer from "@/components/CartDrawer";
 import CartToast from "@/components/CartToast";
 import WelcomeToast from "@/components/WelcomeToast";
 import Footer from "@/components/Footer";
+import { SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative OpenGraph/canonical URLs against the production origin.
+  metadataBase: new URL(SITE_URL),
   title: "The Whites Bangladesh — Pasión Blanca, Desde Bangladesh",
   description:
     "The Whites Bangladesh — the ultimate community hub for Real Madrid fans in Bangladesh. News, Fans Zone, and the official shop. ¡Hala Madrid!",

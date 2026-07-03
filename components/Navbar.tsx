@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useCart } from "@/context/CartContext";
 import SocialLinks from "@/components/SocialLinks";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -146,6 +147,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {/* Social links — desktop only; the mobile menu carries its own set. */}
           <SocialLinks className="hidden md:flex" />
+          <ThemeToggle />
           <CartButton />
 
           {/* Desktop auth */}

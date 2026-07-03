@@ -128,15 +128,16 @@ export default async function ArticlePage({
   };
 
   return (
-    <article className="bg-zinc-950 text-white">
+    <article className="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-white">
       <JsonLd data={newsSchema} />
-      {/* Header — cinematic obsidian gradient with the brand gold glow */}
+      {/* Header — always-dark cinematic hero (obsidian gradient + gold glow),
+          independent of the light/dark toggle */}
       <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
         </div>
-        <div className="relative mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="relative mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-16 lg:px-8">
           <Link
             href="/news"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-gold-300"
@@ -172,10 +173,12 @@ export default async function ArticlePage({
         </div>
       </header>
 
-      {/* Cover image — floats over the header for a premium magazine feel */}
+      {/* Cover image — full-bleed edge-to-edge on mobile (negative margins
+          cancel the wrapper padding), floating rounded magazine card from md:
+          up. */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div
-          className="relative -mt-8 h-56 overflow-hidden rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] sm:h-72 md:h-80"
+          className="relative -mx-4 -mt-8 h-56 overflow-hidden border-0 border-zinc-200 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] dark:border-zinc-800/50 sm:-mx-6 sm:h-72 md:mx-0 md:h-80 md:rounded-2xl md:border"
           style={
             article.image_url
               ? {
@@ -195,12 +198,15 @@ export default async function ArticlePage({
         </div>
       </div>
 
-      {/* Body — Markdown rendered on the dark cinematic canvas with inverted
-          typography. rehype-raw compiles inline HTML snippets (gold/cursive
-          spans etc.) authored by admins through the editor toolbar. */}
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Body — Markdown set in Times New Roman for an editorial reading feel,
+          scaling responsively (base on phones, prose-lg from md:). Light-mode
+          defaults with dark:prose-invert preserving the cinematic dark canvas.
+          rehype-raw compiles inline HTML snippets (gold/cursive spans etc.);
+          those carry inline styles, which override the inherited base font by
+          normal CSS precedence. */}
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:py-12 lg:px-8">
         {content ? (
-          <div className="prose prose-invert max-w-none prose-zinc prose-lg prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-white prose-p:text-zinc-400 prose-li:text-zinc-400 prose-strong:text-white prose-a:font-medium prose-a:text-amber-400 hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-800/50 prose-img:shadow-2xl">
+          <div className="prose max-w-none prose-zinc font-['Times_New_Roman',_Times,_serif] md:prose-lg dark:prose-invert prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-700 dark:prose-p:text-zinc-400 prose-li:text-zinc-700 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-white prose-a:font-medium prose-a:text-amber-600 hover:prose-a:text-amber-500 dark:prose-a:text-amber-400 dark:hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800/50 prose-img:shadow-2xl">
             {/* remark-breaks turns a single newline (Enter in the editor) into a
                 hard <br>, so line breaks the admin types render on the live site
                 instead of being collapsed into a space by standard Markdown. */}
@@ -216,7 +222,7 @@ export default async function ArticlePage({
         )}
 
         {/* Share Report — anchors the bottom of the article canvas */}
-        <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-zinc-800/50 pt-8">
+        <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-zinc-200 pt-8 dark:border-zinc-800/50">
           <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
             Share Report:
           </span>
@@ -227,7 +233,7 @@ export default async function ArticlePage({
               rel="noopener noreferrer"
               aria-label="Share this report on Facebook"
               title="Share on Facebook"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800/80 bg-zinc-900/40 text-zinc-400 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-400 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100/80 text-zinc-500 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-500 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98] dark:border-zinc-800/80 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:text-amber-400"
             >
               <FacebookIcon className="h-4 w-4" />
             </a>
@@ -237,17 +243,17 @@ export default async function ArticlePage({
               rel="noopener noreferrer"
               aria-label="Share this report on X (Twitter)"
               title="Share on X"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800/80 bg-zinc-900/40 text-zinc-400 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-400 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100/80 text-zinc-500 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-500 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98] dark:border-zinc-800/80 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:text-amber-400"
             >
               <XIcon className="h-4 w-4" />
             </a>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-zinc-800/50 pt-8">
+        <div className="mt-8 border-t border-zinc-200 pt-8 dark:border-zinc-800/50">
           <Link
             href="/news"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:text-amber-400"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 transition-all duration-300 ease-out hover:text-amber-600 dark:text-white dark:hover:text-amber-400"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to all news

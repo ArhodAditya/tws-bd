@@ -11,13 +11,13 @@
    (and its descendants) — otherwise dark: utilities ignore the toggle. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Light theme (default): off-white slate-50 surface, dark slate text. */
+/* Light theme (default): clean white surface, near-black zinc text. */
 :root {
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900 */
+  --background: #ffffff; /* white */
+  --foreground: #18181b; /* zinc-900 */
 }
 
-/* Dark theme (forced): the cinematic obsidian canvas with light text. */
+/* Dark theme (toggle / system): the cinematic obsidian canvas, light text. */
 .dark {
   --background: #09090b; /* zinc-950 */
   --foreground: #e4e4e7; /* zinc-200 */

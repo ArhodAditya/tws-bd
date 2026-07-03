@@ -64,13 +64,13 @@ export default function EditArticleForm({ article }: { article: Article }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-midnight-900/15 bg-white px-4 py-2.5 text-midnight-900 shadow-sm outline-none transition placeholder:text-midnight-900/30 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30";
-  const labelClass = "block text-sm font-semibold text-midnight-900";
+    "w-full rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-4 py-2.5 text-white shadow-sm outline-none transition placeholder:text-zinc-600 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30";
+  const labelClass = "block text-sm font-semibold text-white";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-2xl border border-midnight-900/10 bg-white p-6 shadow-xl sm:p-8"
+      className="space-y-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-2xl backdrop-blur-md sm:p-8"
     >
       {/* Title */}
       <div className="space-y-2">
@@ -102,9 +102,9 @@ export default function EditArticleForm({ article }: { article: Article }) {
           placeholder="real-madrid-clinch-la-liga"
           className={inputClass}
         />
-        <p className="text-xs text-midnight-900/50">
+        <p className="text-xs text-zinc-500">
           URL:{" "}
-          <span className="font-medium text-gold-600">
+          <span className="font-medium text-gold-400">
             /news/{slug || "your-slug"}
           </span>
         </p>
@@ -129,14 +129,14 @@ export default function EditArticleForm({ article }: { article: Article }) {
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-midnight-900/40" />
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           </div>
         </div>
 
         <div className="space-y-2">
           <span className={labelClass}>
             Cover Image{" "}
-            <span className="font-normal text-midnight-900/40">(optional)</span>
+            <span className="font-normal text-zinc-500">(optional)</span>
           </span>
           <ImageUploader
             multiple={false}
@@ -164,17 +164,17 @@ export default function EditArticleForm({ article }: { article: Article }) {
 
       {/* Error */}
       {error ? (
-        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </p>
       ) : null}
 
       {/* Actions */}
-      <div className="flex flex-col-reverse items-stretch gap-4 border-t border-midnight-900/10 pt-6 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-col-reverse items-stretch gap-4 border-t border-zinc-800/50 pt-6 sm:flex-row sm:items-center sm:justify-end">
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
         >
           {loading ? (
             <>

@@ -80,7 +80,7 @@ export function AuthorMeta({
         className={
           isHeader
             ? "text-sm font-semibold text-white"
-            : "text-xs font-medium text-midnight-800/70"
+            : "text-xs font-medium text-zinc-400"
         }
       >
         {name}
@@ -100,7 +100,7 @@ function ArticleCover({
 }) {
   return (
     <div
-      className={`relative overflow-hidden bg-gradient-to-br from-midnight-700 via-midnight-900 to-midnight-950 ${
+      className={`relative overflow-hidden bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 transition-transform duration-500 ease-out group-hover:scale-[1.02] ${
         className ?? ""
       }`}
       style={
@@ -131,25 +131,25 @@ export function NewsCard({ article }: { article: ArticleWithAuthor }) {
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-midnight-900/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-xl"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-[0_18px_50px_-20px_rgba(212,175,55,0.35)] active:scale-[0.98]"
     >
       <ArticleCover article={article} className="h-44" />
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-midnight-800/60">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
           <Calendar className="h-3.5 w-3.5" />
           {formatArticleDate(article.created_at)}
         </div>
-        <h3 className="mt-2 line-clamp-2 font-display text-lg font-bold leading-snug text-midnight-900 transition-colors group-hover:text-gold-600">
+        <h3 className="mt-2 line-clamp-2 font-display text-lg font-bold leading-snug tracking-tight text-white transition-colors duration-300 group-hover:text-amber-400">
           {article.title}
         </h3>
         {excerpt ? (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-midnight-800/70">
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-zinc-400">
             {excerpt}
           </p>
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
           <AuthorMeta author={article.profiles} />
-          <ArrowUpRight className="h-4 w-4 shrink-0 text-midnight-900 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-gold-600" />
+          <ArrowUpRight className="h-4 w-4 shrink-0 text-zinc-400 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-amber-400" />
         </div>
       </div>
     </Link>
@@ -163,24 +163,24 @@ export function FeaturedNewsCard({ article }: { article: ArticleWithAuthor }) {
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group grid overflow-hidden rounded-3xl border border-midnight-900/10 bg-white shadow-sm transition-all hover:border-gold-500/40 hover:shadow-2xl md:grid-cols-2"
+      className="group grid overflow-hidden rounded-3xl border border-zinc-800/50 bg-zinc-900/40 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:border-zinc-700/80 hover:shadow-[0_25px_70px_-25px_rgba(212,175,55,0.35)] md:grid-cols-2"
     >
       <ArticleCover article={article} className="min-h-56 md:min-h-full" />
       <div className="flex flex-col justify-center p-7 sm:p-9">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <AuthorMeta author={article.profiles} />
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-midnight-800/60">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
             <Calendar className="h-3.5 w-3.5" />
             {formatArticleDate(article.created_at)}
           </span>
         </div>
-        <h2 className="mt-4 font-display text-2xl font-extrabold leading-tight text-midnight-900 transition-colors group-hover:text-gold-600 sm:text-3xl">
+        <h2 className="mt-4 font-display text-2xl font-extrabold leading-tight tracking-tight text-white transition-colors duration-300 group-hover:text-amber-400 sm:text-3xl">
           {article.title}
         </h2>
         {excerpt ? (
-          <p className="mt-3 line-clamp-3 text-midnight-800/70">{excerpt}</p>
+          <p className="mt-3 line-clamp-3 text-zinc-400">{excerpt}</p>
         ) : null}
-        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-midnight-900 transition-colors group-hover:text-gold-600">
+        <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-white transition-colors duration-300 group-hover:text-amber-400">
           Read full story
           <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>

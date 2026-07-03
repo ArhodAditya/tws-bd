@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 // this instead of redirecting so the boundary is explicit and unmistakable.
 function AccessDenied() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-midnight-950">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-slate-900/40">
         <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
           <ShieldAlert className="h-7 w-7" />
@@ -89,9 +89,9 @@ export default async function ManageAdminsPage() {
     });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-midnight-950">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />

@@ -26,8 +26,8 @@ export default async function NewsPage() {
 
   return (
     <>
-      {/* Header */}
-      <section className="relative overflow-hidden bg-midnight-950 text-white">
+      {/* Header — obsidian gradient flowing into the article grid below */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 left-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_-10%,rgba(212,175,55,0.12),transparent_55%)]" />
@@ -52,8 +52,8 @@ export default async function NewsPage() {
         </div>
       </section>
 
-      {/* Article grid */}
-      <section className="bg-zinc-50">
+      {/* Article grid — deep cinematic canvas */}
+      <section className="bg-gradient-to-b from-zinc-950 to-black">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
           <div className="space-y-8">
             {featured ? <FeaturedNewsCard article={featured} /> : null}

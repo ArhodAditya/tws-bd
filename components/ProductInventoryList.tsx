@@ -82,9 +82,9 @@ export default function ProductInventoryList({
 
   if (products.length === 0) {
     return (
-      <div className="rounded-2xl border border-midnight-900/10 bg-white px-6 py-16 text-center shadow-xl">
-        <PackageX className="mx-auto h-10 w-10 text-midnight-900/20" />
-        <p className="mt-4 text-midnight-900/60">
+      <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/40 px-6 py-16 text-center shadow-xl backdrop-blur-md">
+        <PackageX className="mx-auto h-10 w-10 text-white/20" />
+        <p className="mt-4 text-zinc-400">
           No products yet. Add your first item to stock the storefront.
         </p>
       </div>
@@ -92,14 +92,14 @@ export default function ProductInventoryList({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-midnight-900/10 bg-white shadow-xl">
+    <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 shadow-xl backdrop-blur-md">
       {error ? (
-        <p className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
+        <p className="border-b border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-300">
           {error}
         </p>
       ) : null}
 
-      <ul className="divide-y divide-midnight-900/10">
+      <ul className="divide-y divide-zinc-800/50">
         {products.map((product) => {
           const stockBusy = pending[`${product.id}:stock`];
           const activeBusy = pending[`${product.id}:active`];
@@ -109,7 +109,7 @@ export default function ProductInventoryList({
               className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5"
             >
               {/* Thumbnail */}
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-midnight-900/10 bg-midnight-950">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-zinc-800/50 bg-zinc-950">
                 {product.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -123,10 +123,10 @@ export default function ProductInventoryList({
 
               {/* Name + meta */}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-midnight-900">
+                <p className="truncate font-semibold tracking-tight text-white">
                   {product.name}
                 </p>
-                <p className="mt-0.5 text-sm text-midnight-900/50">
+                <p className="mt-0.5 text-sm text-zinc-500">
                   {CATEGORY_LABEL[
                     product.category as keyof typeof CATEGORY_LABEL
                   ] ?? product.category}{" "}
@@ -167,10 +167,10 @@ export default function ProductInventoryList({
                 onClick={() => toggleStock(product)}
                 disabled={stockBusy}
                 aria-pressed={product.in_stock}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all duration-300 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
                   product.in_stock
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                    : "border-midnight-900/15 bg-zinc-100 text-midnight-900/60 hover:bg-zinc-200"
+                    ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                    : "border-white/15 bg-white/5 text-zinc-400 hover:bg-white/10"
                 }`}
               >
                 {stockBusy ? (
@@ -186,7 +186,7 @@ export default function ProductInventoryList({
               {/* Edit */}
               <Link
                 href={`/admin/shop/edit/${product.id}`}
-                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-midnight-900/15 bg-white px-4 py-1.5 text-sm font-semibold text-midnight-900 transition hover:border-gold-500 hover:text-gold-700"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:border-gold-500 hover:text-amber-400 active:scale-[0.98]"
               >
                 <SquarePen className="h-4 w-4" />
                 Edit

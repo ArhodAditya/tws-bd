@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Newspaper, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 import { createClient } from "@/utils/supabase/server";
 import {
   MOCK_ARTICLES,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/articles";
 import { SITE_LOGO, SITE_NAME, SITE_URL } from "@/lib/site";
 import { AuthorMeta, CategoryBadge } from "@/components/NewsCard";
+import { FacebookIcon, XIcon } from "@/components/BrandIcons";
 import JsonLd from "@/components/JsonLd";
 
 type ArticleParams = { slug: string };
@@ -126,10 +128,10 @@ export default async function ArticlePage({
   };
 
   return (
-    <article className="bg-white">
+    <article className="bg-zinc-950 text-white">
       <JsonLd data={newsSchema} />
-      {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      {/* Header — cinematic obsidian gradient with the brand gold glow */}
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -173,7 +175,7 @@ export default async function ArticlePage({
       {/* Cover image — floats over the header for a premium magazine feel */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div
-          className="relative -mt-8 h-56 overflow-hidden rounded-2xl border border-midnight-900/10 bg-gradient-to-br from-midnight-700 via-midnight-900 to-midnight-950 shadow-xl sm:h-72 md:h-80"
+          className="relative -mt-8 h-56 overflow-hidden rounded-2xl border border-zinc-800/50 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] sm:h-72 md:h-80"
           style={
             article.image_url
               ? {
@@ -193,27 +195,59 @@ export default async function ArticlePage({
         </div>
       </div>
 
-      {/* Body — Markdown so admins can place inline images anywhere. Rendered
-          on a light surface, so we use `prose` (not prose-invert) and size
-          images responsively. */}
+      {/* Body — Markdown rendered on the dark cinematic canvas with inverted
+          typography. rehype-raw compiles inline HTML snippets (gold/cursive
+          spans etc.) authored by admins through the editor toolbar. */}
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         {content ? (
-          <div className="prose prose-lg max-w-none text-midnight-800/80 prose-headings:font-display prose-headings:text-midnight-900 prose-p:text-midnight-800/80 prose-strong:text-midnight-900 prose-a:font-medium prose-a:text-gold-700 hover:prose-a:text-gold-600 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:shadow-md">
+          <div className="prose prose-invert max-w-none prose-zinc prose-lg prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-white prose-p:text-zinc-400 prose-li:text-zinc-400 prose-strong:text-white prose-a:font-medium prose-a:text-amber-400 hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-800/50 prose-img:shadow-2xl">
             {/* remark-breaks turns a single newline (Enter in the editor) into a
                 hard <br>, so line breaks the admin types render on the live site
                 instead of being collapsed into a space by standard Markdown. */}
-            <ReactMarkdown remarkPlugins={[remarkBreaks]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkBreaks]}
+              rehypePlugins={[rehypeRaw]}
+            >
               {content}
             </ReactMarkdown>
           </div>
         ) : (
-          <p className="text-midnight-800/60">Full story coming soon.</p>
+          <p className="text-zinc-500">Full story coming soon.</p>
         )}
 
-        <div className="mt-12 border-t border-midnight-900/10 pt-8">
+        {/* Share Report — anchors the bottom of the article canvas */}
+        <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-zinc-800/50 pt-8">
+          <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+            Share Report:
+          </span>
+          <div className="flex items-center gap-2.5">
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share this report on Facebook"
+              title="Share on Facebook"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800/80 bg-zinc-900/40 text-zinc-400 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-400 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98]"
+            >
+              <FacebookIcon className="h-4 w-4" />
+            </a>
+            <a
+              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(articleUrl)}&text=${encodeURIComponent(article.title ?? "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Share this report on X (Twitter)"
+              title="Share on X"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800/80 bg-zinc-900/40 text-zinc-400 backdrop-blur-md transition-all duration-300 ease-out hover:scale-105 hover:border-amber-400/40 hover:text-amber-400 hover:shadow-[0_0_24px_-8px_rgba(251,191,36,0.6)] active:scale-[0.98]"
+            >
+              <XIcon className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-zinc-800/50 pt-8">
           <Link
             href="/news"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-midnight-900 transition-colors hover:text-gold-600"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:text-amber-400"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to all news

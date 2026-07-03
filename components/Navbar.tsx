@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, Moon, ShieldCheck, ShoppingCart, Sun, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { LogOut, Menu, ShieldCheck, ShoppingCart, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useCart } from "@/context/CartContext";
@@ -96,7 +95,7 @@ export default function Navbar() {
     "Madridista";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/85">
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-zinc-800/50 dark:bg-zinc-950/70">
       <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand / logo — whole area lifts on hover with a soft gold bloom. */}
         <Link
@@ -147,7 +146,6 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {/* Social links — desktop only; the mobile menu carries its own set. */}
           <SocialLinks className="hidden md:flex" />
-          <ThemeToggle />
           <CartButton />
 
           {/* Desktop auth */}
@@ -199,7 +197,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       <div
-        className={`overflow-hidden border-t border-gray-200 bg-white/95 backdrop-blur-md transition-[max-height] duration-300 ease-out dark:border-white/10 dark:bg-slate-950/95 md:hidden ${
+        className={`overflow-hidden border-t border-gray-200 bg-white/95 backdrop-blur-md transition-[max-height] duration-300 ease-out dark:border-zinc-800/50 dark:bg-zinc-950/95 md:hidden ${
           open ? "max-h-[32rem]" : "max-h-0"
         }`}
       >
@@ -278,27 +276,6 @@ export default function Navbar() {
   );
 }
 
-// Sun/Moon theme switch. The two icons are toggled purely with the `dark:`
-// class (driven by next-themes' `.dark` on <html>), so the button renders
-// identically on the server and client — no hydration mismatch, no mounted
-// flag, and therefore no set-state-in-effect.
-function ThemeToggle() {
-  const { setTheme, resolvedTheme } = useTheme();
-
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      aria-label="Toggle light and dark mode"
-      title="Toggle theme"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-gold-300"
-    >
-      <Moon className="block h-5 w-5 dark:hidden" />
-      <Sun className="hidden h-5 w-5 dark:block" />
-    </button>
-  );
-}
-
 // Shopping cart trigger with a live item-count badge. Opens the cart drawer
 // (mounted in the root layout) via the global cart context.
 function CartButton() {
@@ -313,7 +290,7 @@ function CartButton() {
     >
       <ShoppingCart className="h-5 w-5" />
       {itemCount > 0 ? (
-        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-gradient-to-br from-gold-300 to-gold-500 px-1 text-[10px] font-bold tabular-nums text-midnight-950 ring-2 ring-white zoom-in duration-200 dark:ring-slate-950">
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-gradient-to-br from-gold-300 to-gold-500 px-1 text-[10px] font-bold tabular-nums text-midnight-950 ring-2 ring-white zoom-in duration-200 dark:ring-zinc-950">
           {itemCount > 99 ? "99+" : itemCount}
         </span>
       ) : null}

@@ -116,7 +116,7 @@ export default async function Home() {
             />
             <Link
               href="/shop"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 px-9 py-4 text-base font-extrabold text-midnight-950 shadow-[0_0_45px_-8px_rgba(212,175,55,0.95)] ring-1 ring-gold-200/60 transition-transform duration-300 hover:scale-105 sm:px-10 sm:py-5 sm:text-lg"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 px-9 py-4 text-base font-extrabold text-midnight-950 shadow-[0_0_45px_-8px_rgba(212,175,55,0.95)] ring-1 ring-gold-200/60 transition-all duration-300 ease-out hover:scale-105 active:scale-[0.98] sm:px-10 sm:py-5 sm:text-lg"
             >
               <ShoppingBag className="h-6 w-6" />
               Shop the Drop
@@ -172,14 +172,14 @@ export default async function Home() {
           >
             <Link
               href="/fans-zone"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-7 py-3 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.8)] transition-transform hover:scale-[1.03] sm:w-auto"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-7 py-3 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.8)] transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.98] sm:w-auto"
             >
               Join the Fans Zone
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/news"
-              className="inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-gold-500/50 hover:text-gold-300 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition-all duration-300 ease-out hover:border-gold-500/50 hover:text-gold-300 active:scale-[0.98] sm:w-auto"
             >
               Explore Latest News
             </Link>
@@ -193,8 +193,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="bg-slate-50 dark:bg-midnight-950">
+      {/* Features — obsidian gradient divider separating the hero from the
+          stats banner */}
+      <section className="bg-gradient-to-b from-zinc-900 to-zinc-950">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className={`${entrance} mx-auto max-w-2xl text-center`}>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-600 dark:text-gold-400">
@@ -214,7 +215,7 @@ export default async function Home() {
               <Link
                 key={feature.href}
                 href={feature.href}
-                className={`${entrance} ${FEATURE_DELAYS[index]} group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-all hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/40`}
+                className={`${entrance} ${FEATURE_DELAYS[index]} group relative overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-8 backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-[0_20px_50px_-20px_rgba(212,175,55,0.25)] active:scale-[0.98]`}
               >
                 <span className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold-300 to-gold-600 transition-transform duration-300 group-hover:scale-x-100" />
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-midnight-950 text-gold-400 transition-colors group-hover:bg-gold-500 group-hover:text-midnight-950 dark:bg-midnight-800">
@@ -236,8 +237,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Stats banner */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-100 to-gray-200 text-slate-900 dark:from-midnight-950 dark:to-midnight-950 dark:text-white">
+      {/* Stats banner — deepest layer of the obsidian stack */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black text-white">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(212,175,55,0.15),transparent_55%)]"
@@ -270,7 +271,7 @@ export default async function Home() {
       {/* Latest News — the two most recent articles in a premium dark grid,
           replacing the old bottom Shop CTA (that push now lives at the very top
           of the page). */}
-      <section className="relative overflow-hidden bg-midnight-950 text-white">
+      <section className="relative overflow-hidden bg-zinc-950 text-white">
         {/* Cinematic gold glow + midnight depth */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 left-1/4 h-72 w-72 -translate-x-1/2 rounded-full bg-gold-500/10 blur-3xl" />
@@ -306,11 +307,12 @@ export default async function Home() {
                   href={`/news/${article.slug}`}
                   className={`${entrance} ${
                     index === 0 ? "delay-100" : "delay-200"
-                  } group flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-midnight-900/60 shadow-xl backdrop-blur transition-all hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-[0_18px_50px_-20px_rgba(212,175,55,0.45)] sm:w-[calc(50%_-_0.75rem)]`}
+                  } group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-[0_18px_50px_-20px_rgba(212,175,55,0.45)] sm:w-[calc(50%_-_0.75rem)]`}
                 >
-                  {/* Cover image (or on-brand fallback) with a category pill */}
+                  {/* Cover image (or on-brand fallback) with a category pill —
+                      the image layer subtly scales up on hover */}
                   <div
-                    className="relative h-48 overflow-hidden bg-gradient-to-br from-midnight-700 via-midnight-900 to-midnight-950 sm:h-56"
+                    className="relative h-48 overflow-hidden bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 transition-transform duration-500 ease-out group-hover:scale-[1.02] sm:h-56"
                     style={
                       article.image_url
                         ? {
@@ -360,7 +362,7 @@ export default async function Home() {
           <div className="mt-12 flex justify-center">
             <Link
               href="/news"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-8 py-3.5 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/50 transition-transform hover:scale-[1.03]"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-8 py-3.5 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/50 transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.98]"
             >
               <Newspaper className="h-4 w-4" />
               View All News

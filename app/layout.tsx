@@ -52,13 +52,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
-      {/* Base surface is themed with `dark:` utilities (not CSS vars) so it
-          flips instantly on a live theme toggle. */}
-      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-slate-200">
+      {/* The storefront is a single, always-dark cinematic identity: the theme
+          is forced to `dark` so every `dark:` utility across the app resolves
+          to the premium obsidian surfaces. */}
+      <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-200">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          forcedTheme="dark"
           disableTransitionOnChange
         >
           <CartProvider>

@@ -49,9 +49,9 @@ export default async function AdminReviewsPage() {
     (data as FanReviewWithAuthor[] | null) ?? [];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-midnight-950">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />

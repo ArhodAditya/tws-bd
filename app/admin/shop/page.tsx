@@ -43,9 +43,9 @@ export default async function AdminShopPage() {
   const products: Product[] = data ?? [];
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -77,7 +77,7 @@ export default async function AdminShopPage() {
       {/* Inventory */}
       <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="-mt-6 flex items-center justify-between gap-4">
-          <p className="text-sm font-medium text-midnight-900/60">
+          <p className="text-sm font-medium text-zinc-400">
             {products.length} product{products.length === 1 ? "" : "s"}
           </p>
           <Link

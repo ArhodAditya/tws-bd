@@ -17,10 +17,10 @@
   --foreground: #0f172a; /* slate-900 */
 }
 
-/* Dark theme: the premium midnight surface with light text. */
+/* Dark theme (forced): the cinematic obsidian canvas with light text. */
 .dark {
-  --background: #050814; /* midnight-950 */
-  --foreground: #e2e8f0; /* slate-200 */
+  --background: #09090b; /* zinc-950 */
+  --foreground: #e4e4e7; /* zinc-200 */
 }
 
 @theme inline {

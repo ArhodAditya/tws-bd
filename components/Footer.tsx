@@ -80,7 +80,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gold-500/15 bg-slate-50 text-slate-500 dark:bg-midnight-950 dark:text-slate-400">
+    <footer className="border-t border-gold-500/15 bg-slate-50 text-slate-500 dark:bg-gradient-to-b dark:from-zinc-950 dark:to-black dark:text-zinc-400">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Directory grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">

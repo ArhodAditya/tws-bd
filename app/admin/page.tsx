@@ -49,9 +49,9 @@ export default async function AdminPage() {
   const canManageAdmins = isSuperAdmin(user.email);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-midnight-950">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -79,15 +79,15 @@ export default async function AdminPage() {
           {/* Write New Article */}
           <Link
             href="/admin/articles/new"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <FileText className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Write New Article
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Craft the next headline for the Madridista faithful and publish it
               instantly.
             </p>
@@ -100,15 +100,15 @@ export default async function AdminPage() {
           {/* Manage News */}
           <Link
             href="/admin/articles"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <Newspaper className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Manage News
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Review every published article, jump in to edit a story, or delete
               one — it disappears from the site the moment you confirm.
             </p>
@@ -119,14 +119,14 @@ export default async function AdminPage() {
           </Link>
 
           {/* Sync Live Football Data */}
-          <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40">
+          <div className="flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <RadioTower className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Sync Live Football Data
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Pull the latest squad and upcoming fixtures from API-Football. Runs
               automatically every day — trigger it here on demand.
             </p>
@@ -138,15 +138,15 @@ export default async function AdminPage() {
           {/* Sync Fixtures (Sofascore) */}
           <Link
             href="/admin/fixtures"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <CalendarClock className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Sync Fixtures
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Pull Real Madrid&apos;s upcoming fixtures from Sofascore and feed
               the Match Predictor — deduped by fixture id.
             </p>
@@ -159,15 +159,15 @@ export default async function AdminPage() {
           {/* Manage Shop */}
           <Link
             href="/admin/shop"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <ShoppingBag className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Manage Shop
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Review the full catalogue, edit products, and flip items in or out
               of stock — or add new gear.
             </p>
@@ -180,15 +180,15 @@ export default async function AdminPage() {
           {/* Moderate Fan Reviews */}
           <Link
             href="/admin/reviews"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <Megaphone className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Moderate Fan Reviews
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Approve fan-submitted reviews to publish them on the “Voices of the
               Madridistas” wall in the Fans Zone — or pull any back down.
             </p>
@@ -201,15 +201,15 @@ export default async function AdminPage() {
           {/* Manage Users */}
           <Link
             href="/admin/users"
-            className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
           >
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
               <Users className="h-5 w-5" />
             </span>
-            <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
               Manage Users
             </h2>
-            <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Control which accounts appear on the public Fan Zone leaderboard —
               flip any user between visible and hidden.
             </p>
@@ -223,15 +223,15 @@ export default async function AdminPage() {
           {canManageAdmins ? (
             <Link
               href="/admin/admins"
-              className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40 transition-transform hover:-translate-y-0.5 hover:shadow-2xl"
+              className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
             >
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
                 <ShieldPlus className="h-5 w-5" />
               </span>
-              <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+              <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
                 Manage Admins
               </h2>
-              <p className="mt-1.5 flex-1 text-sm text-slate-600 dark:text-gray-300">
+              <p className="mt-1.5 flex-1 text-sm text-zinc-400">
                 Grant admin access to another account by email. Reserved for the
                 super-admin only.
               </p>

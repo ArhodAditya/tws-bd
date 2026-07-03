@@ -44,9 +44,9 @@ export default async function AdminArticlesPage() {
   const articles: ArticleWithAuthor[] = data ?? [];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-midnight-950">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <header className="relative overflow-hidden bg-midnight-950 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -87,14 +87,14 @@ export default async function AdminArticlesPage() {
       {/* List */}
       <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="-mt-6">
-          <p className="mb-3 text-sm font-medium text-slate-500 dark:text-gray-400">
+          <p className="mb-3 text-sm font-medium text-zinc-400">
             {articles.length} article{articles.length === 1 ? "" : "s"}
           </p>
 
           {articles.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-midnight-900/15 bg-white p-10 text-center shadow-sm dark:border-white/10 dark:bg-slate-900/40">
-              <Newspaper className="mx-auto h-10 w-10 text-midnight-900/20 dark:text-white/20" />
-              <p className="mt-4 text-sm text-slate-600 dark:text-gray-300">
+            <div className="rounded-2xl border border-dashed border-zinc-800/50 bg-zinc-900/40 p-10 text-center backdrop-blur-md">
+              <Newspaper className="mx-auto h-10 w-10 text-white/20" />
+              <p className="mt-4 text-sm text-zinc-400">
                 No articles published yet. Write your first story to see it here.
               </p>
             </div>
@@ -103,19 +103,19 @@ export default async function AdminArticlesPage() {
               {articles.map((article) => (
                 <li
                   key={article.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-midnight-900/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-4 rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:border-zinc-700/80 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <CategoryBadge category={article.category} />
-                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
                         <Calendar className="h-3.5 w-3.5" />
                         {formatArticleDate(article.created_at)}
                       </span>
                     </div>
                     <Link
                       href={`/news/${article.slug}`}
-                      className="mt-2 block truncate font-display text-lg font-bold text-slate-900 transition-colors hover:text-gold-600 dark:text-white dark:hover:text-gold-300"
+                      className="mt-2 block truncate font-display text-lg font-bold tracking-tight text-white transition-colors duration-300 hover:text-amber-400"
                     >
                       {article.title ?? "Untitled"}
                     </Link>
@@ -124,7 +124,7 @@ export default async function AdminArticlesPage() {
                   <div className="flex shrink-0 items-start gap-2">
                     <Link
                       href={`/admin/articles/edit/${article.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-midnight-900/15 bg-white px-3 py-1.5 text-sm font-semibold text-midnight-900 transition-colors hover:border-gold-500 hover:text-gold-700 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:text-gold-300"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:border-gold-500 hover:text-amber-400 active:scale-[0.98]"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       Edit

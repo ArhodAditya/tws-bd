@@ -5,14 +5,20 @@ import type { Database } from "@/utils/supabase/database.types";
 
 export type Product = Database["public"]["Tables"]["products"]["Row"];
 
-export type ShopCategory = "jersey" | "turf" | "football";
+export type ShopCategory = "jersey" | "turf" | "football" | "fashion";
 
-export const SHOP_CATEGORIES: ShopCategory[] = ["jersey", "turf", "football"];
+export const SHOP_CATEGORIES: ShopCategory[] = [
+  "jersey",
+  "turf",
+  "football",
+  "fashion",
+];
 
 // Storefront filter tabs. `all` is a UI-only pseudo-category.
 export const CATEGORY_FILTERS = [
   { value: "all", label: "All" },
   { value: "jersey", label: "Jerseys" },
+  { value: "fashion", label: "Fashion" },
   { value: "turf", label: "Turfs" },
   { value: "football", label: "Equipment" },
 ] as const;
@@ -24,7 +30,63 @@ export const CATEGORY_LABEL: Record<ShopCategory, string> = {
   jersey: "Jersey",
   turf: "Turf",
   football: "Equipment",
+  fashion: "Fashion",
 };
+
+// --- Sizing blueprints ------------------------------------------------------
+// Which size chart the product page renders: the standard jersey chart, the
+// fixed winter-drop fashion chart, or admin-typed custom measurements.
+
+export type SizePattern = "jersey" | "fashion" | "custom";
+
+export const SIZE_PATTERNS: SizePattern[] = ["jersey", "fashion", "custom"];
+
+// One row of a chest/length size chart. Values are stored as display strings
+// (e.g. '40"') so admins can write whatever unit or note fits the drop.
+export type SizeChartRow = { size: string; chest: string; length: string };
+
+// Winter-drop hoodie chart (flat measurements, inches) — the fixed "fashion"
+// blueprint.
+export const FASHION_SIZE_ROWS: SizeChartRow[] = [
+  { size: "M", chest: '40"', length: '27"' },
+  { size: "L", chest: '42"', length: '28"' },
+  { size: "XL", chest: '44"', length: '29"' },
+];
+
+// Sizes pre-filled in the admin form when the fashion blueprint is picked.
+export const FASHION_DEFAULT_SIZES = FASHION_SIZE_ROWS.map((row) => row.size);
+
+// Resolve which chart a product should show. Falls back to inferring from the
+// category for rows created before `size_pattern` existed.
+export function resolveSizePattern(
+  product: Pick<Product, "category" | "size_pattern">
+): SizePattern {
+  const stored = product.size_pattern;
+  if (stored === "jersey" || stored === "fashion" || stored === "custom") {
+    return stored;
+  }
+  return product.category === "fashion" ? "fashion" : "jersey";
+}
+
+// Defensive parse of the `custom_size_chart` jsonb column — a malformed row
+// must never crash the storefront. Rows without a size label are dropped.
+export function parseCustomSizeChart(
+  value: Product["custom_size_chart"]
+): SizeChartRow[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return [];
+    const { size, chest, length } = row as Record<string, unknown>;
+    if (typeof size !== "string" || !size.trim()) return [];
+    return [
+      {
+        size: size.trim(),
+        chest: typeof chest === "string" ? chest.trim() : "",
+        length: typeof length === "string" ? length.trim() : "",
+      },
+    ];
+  });
+}
 
 // Prices are stored as plain numbers; the audience is Bangladesh, so format as
 // Bangladeshi Taka.

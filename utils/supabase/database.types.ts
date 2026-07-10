@@ -329,6 +329,7 @@ export type Database = {
           badge_text: string | null;
           category: string;
           created_at: string;
+          custom_size_chart: Json | null;
           description: string | null;
           id: string;
           images: string[];
@@ -336,12 +337,14 @@ export type Database = {
           is_active: boolean;
           name: string;
           price: number;
+          size_pattern: string;
           sizes: string[];
         };
         Insert: {
           badge_text?: string | null;
           category?: string;
           created_at?: string;
+          custom_size_chart?: Json | null;
           description?: string | null;
           id?: string;
           images?: string[];
@@ -349,12 +352,14 @@ export type Database = {
           is_active?: boolean;
           name: string;
           price?: number;
+          size_pattern?: string;
           sizes?: string[];
         };
         Update: {
           badge_text?: string | null;
           category?: string;
           created_at?: string;
+          custom_size_chart?: Json | null;
           description?: string | null;
           id?: string;
           images?: string[];
@@ -362,6 +367,7 @@ export type Database = {
           is_active?: boolean;
           name?: string;
           price?: number;
+          size_pattern?: string;
           sizes?: string[];
         };
         Relationships: [];

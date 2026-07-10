@@ -4,8 +4,16 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LoaderCircle, PackagePlus } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { SHOP_CATEGORIES, CATEGORY_LABEL, type ShopCategory } from "@/lib/shop";
+import {
+  SHOP_CATEGORIES,
+  CATEGORY_LABEL,
+  FASHION_DEFAULT_SIZES,
+  type ShopCategory,
+  type SizeChartRow,
+  type SizePattern,
+} from "@/lib/shop";
 import ImageUploader from "@/components/ImageUploader";
+import SizingBlueprintSelector from "@/components/SizingBlueprintSelector";
 
 // Split a comma / newline separated string into a clean string[].
 function toList(input: string): string[] {
@@ -23,6 +31,8 @@ export default function NewProductForm() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<ShopCategory>("jersey");
+  const [sizePattern, setSizePattern] = useState<SizePattern>("jersey");
+  const [customRows, setCustomRows] = useState<SizeChartRow[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [sizes, setSizes] = useState("S, M, L, XL, XXL");
   const [badgeText, setBadgeText] = useState("");
@@ -31,6 +41,23 @@ export default function NewProductForm() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Picking the fashion blueprint pre-fills the matching M/L/XL sizes; the
+  // custom blueprint opens with one blank row ready to type into.
+  const handlePatternChange = (next: SizePattern) => {
+    if (next === sizePattern) return;
+    setSizePattern(next);
+    if (next === "fashion") setSizes(FASHION_DEFAULT_SIZES.join(", "));
+    if (next === "custom" && customRows.length === 0) {
+      setCustomRows([{ size: "", chest: "", length: "" }]);
+    }
+  };
+
+  // Tagging a product as Fashion implies the winter-drop chart.
+  const handleCategoryChange = (next: ShopCategory) => {
+    setCategory(next);
+    if (next === "fashion") handlePatternChange("fashion");
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,12 +74,27 @@ export default function NewProductForm() {
       return;
     }
 
+    // Custom blueprint: keep only rows with a size label; require at least one.
+    const cleanedRows = customRows
+      .map((row) => ({
+        size: row.size.trim(),
+        chest: row.chest.trim(),
+        length: row.length.trim(),
+      }))
+      .filter((row) => row.size);
+    if (sizePattern === "custom" && cleanedRows.length === 0) {
+      setError("Add at least one row to the custom size chart.");
+      return;
+    }
+
     setLoading(true);
     const { error: insertError } = await supabase.from("products").insert({
       name: trimmedName,
       description: description.trim() || null,
       price: priceValue,
       category,
+      size_pattern: sizePattern,
+      custom_size_chart: sizePattern === "custom" ? cleanedRows : null,
       images,
       sizes: toList(sizes),
       badge_text: badgeText.trim() || null,
@@ -123,7 +165,9 @@ export default function NewProductForm() {
             <select
               id="category"
               value={category}
-              onChange={(e) => setCategory(e.target.value as ShopCategory)}
+              onChange={(e) =>
+                handleCategoryChange(e.target.value as ShopCategory)
+              }
               className={`${inputClass} appearance-none pr-10`}
             >
               {SHOP_CATEGORIES.map((value) => (
@@ -136,6 +180,14 @@ export default function NewProductForm() {
           </div>
         </div>
       </div>
+
+      {/* Sizing blueprint — which size chart the product page renders */}
+      <SizingBlueprintSelector
+        pattern={sizePattern}
+        onPatternChange={handlePatternChange}
+        customRows={customRows}
+        onCustomRowsChange={setCustomRows}
+      />
 
       {/* Description */}
       <div className="space-y-2">

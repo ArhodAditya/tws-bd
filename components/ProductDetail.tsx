@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Droplets,
   Dumbbell,
+  Gem,
   Info,
   RotateCcw,
   Ruler,
@@ -23,6 +24,8 @@ import {
   CATEGORY_LABEL,
   CUSTOM_FONT_FEE,
   formatPrice,
+  parseCustomSizeChart,
+  resolveSizePattern,
   whatsappOrderUrl,
   type Product,
   type ShopCategory,
@@ -36,6 +39,7 @@ const CATEGORY_ICON: Record<ShopCategory, typeof Shirt> = {
   jersey: Shirt,
   turf: Dumbbell,
   football: Volleyball,
+  fashion: Gem,
 };
 
 // Inline WhatsApp glyph (lucide has no brand icons).
@@ -169,6 +173,19 @@ export default function ProductDetail({
 }) {
   const hasSizes = product.sizes && product.sizes.length > 0;
   const isJersey = product.category === "jersey";
+  // Which size chart this product renders: jersey (standard kit), fashion
+  // (winter-drop hoodie) or custom (admin-typed rows). The jersey chart only
+  // makes sense on actual jerseys — turf/football rows keep the default
+  // pattern but shouldn't show a shirt chart.
+  const sizePattern = resolveSizePattern(product);
+  const customSizeRows =
+    sizePattern === "custom"
+      ? parseCustomSizeChart(product.custom_size_chart)
+      : [];
+  const showSizeGuide =
+    sizePattern === "fashion" ||
+    (sizePattern === "custom" && customSizeRows.length > 0) ||
+    (sizePattern === "jersey" && isJersey);
   const [size, setSize] = useState<string | null>(
     hasSizes ? product.sizes[0] : null
   );
@@ -253,7 +270,7 @@ export default function ProductDetail({
                 <p className="text-sm font-bold uppercase tracking-wide text-white">
                   Select size
                 </p>
-                {isJersey ? (
+                {showSizeGuide ? (
                   <button
                     type="button"
                     onClick={() => setSizeGuideOpen(true)}
@@ -434,10 +451,12 @@ export default function ProductDetail({
         )}
       </div>
 
-      {/* Jersey size guide modal */}
+      {/* Size guide modal — chart rendered per the product's sizing blueprint */}
       <SizeGuideModal
         open={sizeGuideOpen}
         onClose={() => setSizeGuideOpen(false)}
+        pattern={sizePattern}
+        customRows={customSizeRows}
       />
     </div>
   );

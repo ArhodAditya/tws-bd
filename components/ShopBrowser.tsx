@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Dumbbell, Shirt, ShoppingBag, Volleyball } from "lucide-react";
+import { Dumbbell, Gem, Shirt, ShoppingBag, Volleyball } from "lucide-react";
 import {
   CATEGORY_FILTERS,
   CATEGORY_LABEL,
@@ -17,6 +17,7 @@ const CATEGORY_ICON: Record<ShopCategory, typeof Shirt> = {
   jersey: Shirt,
   turf: Dumbbell,
   football: Volleyball,
+  fashion: Gem,
 };
 
 export default function ShopBrowser({ products }: { products: Product[] }) {

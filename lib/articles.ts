@@ -122,7 +122,7 @@ export const MOCK_ARTICLES: ArticleWithAuthor[] = [
     slug: "real-madrid-clinch-la-liga-at-the-bernabeu",
     title: "Real Madrid Clinch La Liga Title in Front of a Roaring Bernabéu",
     content:
-      "The Santiago Bernabéu erupted as Real Madrid lifted the La Liga trophy once again, confirming the title with two fixtures still to play.\n\nFrom the opening whistle the home side dictated the tempo, pressing high and moving the ball with the kind of authority that has defined this campaign. The breakthrough arrived early and the lead never looked in doubt.\n\nFor the supporters of The Whites Bangladesh watching from thousands of miles away, it was another night to remember in a season that has delivered drama, brilliance, and silverware. ¡Hala Madrid!",
+      "The Santiago Bernabéu erupted as Real Madrid lifted the La Liga trophy once again, confirming the title with two fixtures still to play.\n\nFrom the opening whistle the home side dictated the tempo, pressing high and moving the ball with the kind of authority that has defined this campaign. The breakthrough arrived early and the lead never looked in doubt.\n\nFor the supporters of The Whites Stories watching from thousands of miles away, it was another night to remember in a season that has delivered drama, brilliance, and silverware. ¡Hala Madrid!",
     profiles: { full_name: "TWS Newsroom", avatar_url: null },
   },
   {

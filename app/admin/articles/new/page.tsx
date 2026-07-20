@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 import NewArticleForm from "@/components/NewArticleForm";
 
 export const metadata: Metadata = {
-  title: "New Article — Admin — The Whites Bangladesh",
+  title: "New Article — Admin — The Whites Stories",
 };
 
 export default async function NewArticlePage() {

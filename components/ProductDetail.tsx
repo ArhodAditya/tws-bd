@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
@@ -191,6 +192,10 @@ export default function ProductDetail({
   );
   const [customName, setCustomName] = useState("");
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  // Playful post-tap feedback: the button briefly flips to "In the Bag!" with
+  // a springy label swap before returning to its resting state.
+  const [justAdded, setJustAdded] = useState(false);
+  const addedTimer = useRef<number | null>(null);
   const { addItem } = useCart();
 
   const handleAddToCart = () => {
@@ -201,7 +206,33 @@ export default function ProductDetail({
       size,
       image: product.images?.[0] ?? null,
     });
+    setJustAdded(true);
+    if (addedTimer.current) window.clearTimeout(addedTimer.current);
+    addedTimer.current = window.setTimeout(() => setJustAdded(false), 1400);
   };
+
+  // Shared springy label swap for both Add-to-Cart buttons.
+  const addLabel = (label: ReactNode) => (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={justAdded ? "added" : "add"}
+        initial={{ y: 10, opacity: 0, scale: 0.9 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: -10, opacity: 0, scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 500, damping: 28 }}
+        className="inline-flex items-center gap-2"
+      >
+        {justAdded ? (
+          <>
+            <Check className="h-5 w-5" />
+            In the Bag! 👑
+          </>
+        ) : (
+          label
+        )}
+      </motion.span>
+    </AnimatePresence>
+  );
 
   const orderUrl = whatsappOrderUrl(
     product,
@@ -336,14 +367,25 @@ export default function ProductDetail({
           <div className="mt-8 hidden gap-3 md:flex md:flex-col">
             {product.in_stock ? (
               <>
-                <button
+                <motion.button
                   type="button"
                   onClick={handleAddToCart}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-6 py-3.5 text-sm font-bold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98]"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 17 }}
+                  className={`inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] ${
+                    justAdded
+                      ? "bg-gradient-to-r from-pitch-300 to-pitch-500"
+                      : "bg-gradient-to-r from-gold-300 to-gold-500"
+                  }`}
                 >
-                  <ShoppingCart className="h-5 w-5" />
-                  Add to Cart
-                </button>
+                  {addLabel(
+                    <>
+                      <ShoppingCart className="h-5 w-5" />
+                      Add to Cart
+                    </>
+                  )}
+                </motion.button>
                 <a
                   href={orderUrl}
                   target="_blank"
@@ -435,14 +477,24 @@ export default function ProductDetail({
             >
               <WhatsAppIcon className="h-5 w-5" />
             </a>
-            <button
+            <motion.button
               type="button"
               onClick={handleAddToCart}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-5 py-3.5 text-sm font-bold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] transition-transform active:scale-[0.98]"
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 420, damping: 17 }}
+              className={`inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold text-midnight-950 shadow-[0_0_22px_-8px_rgba(212,175,55,0.9)] ${
+                justAdded
+                  ? "bg-gradient-to-r from-pitch-300 to-pitch-500"
+                  : "bg-gradient-to-r from-gold-300 to-gold-500"
+              }`}
             >
-              <ShoppingCart className="h-5 w-5" />
-              Add to Cart · {formatPrice(displayTotal)}
-            </button>
+              {addLabel(
+                <>
+                  <ShoppingCart className="h-5 w-5" />
+                  Add to Cart · {formatPrice(displayTotal)}
+                </>
+              )}
+            </motion.button>
           </div>
         ) : (
           <div className="flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-zinc-400">

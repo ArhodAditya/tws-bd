@@ -1,373 +1,208 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Calendar,
-  Newspaper,
-  ShoppingBag,
-  ShoppingCart,
-  Star,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import {
-  formatArticleDate,
-  getExcerpt,
-  MOCK_ARTICLES,
-  type ArticleWithAuthor,
-} from "@/lib/articles";
-import { CategoryBadge } from "@/components/NewsCard";
+import { MOCK_ARTICLES, type ArticleWithAuthor } from "@/lib/articles";
+import { type Product } from "@/lib/shop";
+import { NewsCard } from "@/components/NewsCard";
+import HomeHero from "@/components/home/HomeHero";
+import ProductCard from "@/components/shop/ProductCard";
+import { ScrollReveal } from "@/components/motion/primitives";
 
-const features = [
+// Editorial index rows — deliberately not another icon-card grid. Each row is
+// a full-width link with an oversized index number and a rule.
+const SECTIONS = [
   {
     href: "/news",
-    icon: Newspaper,
-    title: "Latest News",
-    description:
-      "Match reports, transfer rumours, and Los Blancos headlines — curated for Bangladeshi Madridistas.",
+    title: "Newsroom",
+    blurb: "Match reports, transfers, and tactical breakdowns.",
   },
   {
     href: "/fans-zone",
-    icon: Users,
     title: "Fans Zone",
-    description:
-      "Connect with fellow supporters, join watch parties, and live every Hala Madrid moment together.",
+    blurb: "Watch parties, predictions, and the community table.",
   },
   {
     href: "/shop",
-    icon: ShoppingBag,
-    title: "Official Shop",
-    description:
-      "Kits, scarves, and exclusive merch to wear your white pride with honour.",
+    title: "The Store",
+    blurb: "Kits, hoodies, turf trainers — worn with intent.",
   },
 ];
 
-const stats = [
-  { value: "15", label: "Champions League Titles" },
-  { value: "36", label: "La Liga Titles" },
-  { value: "∞", label: "Madridista Passion" },
+const HONOURS = [
+  { value: "15", label: "Champions League" },
+  { value: "36", label: "La Liga" },
+  { value: "∞", label: "Madridista passion" },
 ];
 
-// Static stagger delays for the feature cards (literal class names so Tailwind
-// emits them).
-const FEATURE_DELAYS = ["delay-100", "delay-200", "delay-300"] as const;
-
 export default async function Home() {
-  // Shared entrance-animation base; pair with a `delay-*` for a staggered reveal.
-  const entrance =
-    "animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both";
-
-  // The two most recent articles for the homepage "Latest News" teaser. Falls
-  // back to sample content (same as the /news page) so the section never looks
-  // empty before the `articles` table has rows.
   const supabase = await createClient();
-  const { data: newsData } = await supabase
-    .from("articles")
-    .select("*, profiles(full_name, avatar_url)")
-    .order("created_at", { ascending: false })
-    .limit(2);
+
+  // Latest news + the newest active drop, fetched in parallel. Both fall back
+  // gracefully so the page never renders half-empty.
+  const [newsRes, productRes] = await Promise.all([
+    supabase
+      .from("articles")
+      .select("*, profiles(full_name, avatar_url)")
+      .order("created_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
+
   const latestNews: ArticleWithAuthor[] =
-    newsData && newsData.length > 0
-      ? (newsData as ArticleWithAuthor[])
-      : MOCK_ARTICLES.slice(0, 2);
+    newsRes.data && newsRes.data.length > 0
+      ? (newsRes.data as ArticleWithAuthor[])
+      : MOCK_ARTICLES.slice(0, 3);
+  const drop: Product[] = productRes.data ?? [];
 
   return (
     <>
-      {/* First-sight Shop CTA — the very first thing below the Navbar, above the
-          fold. A bold, glowing banner that drops in from the top and drives
-          straight to the storefront with a pulsing button. */}
-      <section className="animate-in fade-in slide-in-from-top-5 duration-1000 fill-mode-both relative overflow-hidden border-b border-gold-500/20 bg-gradient-to-r from-midnight-950 via-midnight-900 to-midnight-950 text-white">
-        {/* Glowing gradient wash + slow-pulsing gold/rose blooms */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-40%,rgba(212,175,55,0.25),transparent_60%)]" />
-          <div className="animate-glow absolute left-[15%] top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-gold-500/30 blur-3xl" />
-          <div className="animate-glow absolute right-[15%] top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-rose-500/15 blur-3xl" />
-        </div>
+      <HomeHero />
 
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-5 px-4 py-6 text-center sm:flex-row sm:justify-between sm:gap-6 sm:py-7 sm:text-left lg:px-8">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gold-500/15 text-gold-300 ring-1 ring-gold-500/30 sm:flex">
-              <ShoppingBag className="h-6 w-6" />
-            </span>
-            <div>
-              {/* Prominent store label so the banner reads as the shop at a glance */}
-              <div className="flex items-center justify-center gap-2 sm:justify-start">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/40 bg-gold-500/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-gold-200">
-                  <ShoppingCart className="h-3 w-3" />
-                  TWS Store
-                </span>
-                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-gold-400">
-                  New Season Drop
-                </span>
+      {/* ===== THE DROP — real merch, swipeable on mobile ==================== */}
+      {drop.length > 0 ? (
+        <section className="relative overflow-hidden bg-midnight-950 py-16 sm:py-20">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl"
+          />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <ScrollReveal>
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="display-lg font-display uppercase text-white">
+                    The Drop
+                  </h2>
+                  <p className="mt-2 max-w-md text-sm text-zinc-400 sm:text-base">
+                    This season&rsquo;s kit, in hand and ready to ship from
+                    Chattogram.
+                  </p>
+                </div>
+                <Link
+                  href="/shop"
+                  className="hidden h-12 shrink-0 items-center gap-2 rounded-full border border-gold-500/40 px-6 text-xs font-black uppercase tracking-[0.14em] text-gold-300 transition-colors hover:bg-gold-500/15 sm:inline-flex"
+                >
+                  All gear
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-              <h2 className="mt-1.5 font-display text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-                New Season, New Drip.{" "}
-                <span className="text-gradient-gold">Cop the Latest Gear.</span>
-              </h2>
-            </div>
-          </div>
+            </ScrollReveal>
 
-          {/* Massive, pulsing CTA — a glowing halo pulses behind the button so
-              the label stays crisp while the button visibly throbs for attention. */}
-          <div className="relative shrink-0">
-            <span
-              aria-hidden
-              className="animate-pulse absolute inset-0 -z-10 rounded-full bg-gold-400/60 blur-xl"
-            />
+            {/* Swipeable shelf on mobile, grid from md. */}
+            {/* 2-up at tablet, 4-up from lg — 4 columns at 768px squeezes the
+                trading-card proportion too narrow to read. */}
+            <div className="no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
+              {drop.slice(0, 4).map((product, i) => (
+                <ProductCard key={product.id} product={product} index={i} />
+              ))}
+            </div>
+
             <Link
               href="/shop"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 px-9 py-4 text-base font-extrabold text-midnight-950 shadow-[0_0_45px_-8px_rgba(212,175,55,0.95)] ring-1 ring-gold-200/60 transition-all duration-300 ease-out hover:scale-105 active:scale-[0.98] sm:px-10 sm:py-5 sm:text-lg"
+              className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full border border-gold-500/40 text-xs font-black uppercase tracking-[0.14em] text-gold-300 sm:hidden"
             >
-              <ShoppingBag className="h-6 w-6" />
-              Shop the Drop
-              <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+              Shop all gear
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      {/* Hero — image-backed, cinematic dark aesthetic. /hero-bg.png sits under
-          a heavy zinc-950 gradient overlay so the white copy stays fully
-          readable no matter what the photo looks like. */}
-      <section className="relative flex min-h-[80vh] items-center overflow-hidden bg-zinc-950 bg-[url('/hero-bg.png')] bg-cover bg-[position:center_top] bg-no-repeat text-white sm:bg-center">
-        {/* Heavy dark overlay for the premium, readable cinematic fade */}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/60 to-zinc-950"
-        />
-        {/* Ambient gold glow layered over the overlay, keeping the brand accent */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-gold-500/10 blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(212,175,55,0.14),transparent_60%)]" />
-        </div>
-
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-4 py-24 text-center sm:px-6 sm:py-32 lg:px-8">
-          <span
-            className={`${entrance} mb-6 inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-300`}
-          >
-            <Star className="h-3.5 w-3.5 fill-gold-400 text-gold-400" />
-            Uniting Bangladeshi Madridistas
-          </span>
-
-          <h1
-            className={`${entrance} delay-100 max-w-4xl font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl`}
-          >
-            Welcome to The Whites{" "}
-            <span className="text-gradient-gold">Bangladesh</span>
-          </h1>
-
-          <p
-            className={`${entrance} delay-200 mt-6 max-w-2xl text-lg text-zinc-200 sm:text-xl`}
-          >
-            <span className="font-display text-2xl font-semibold italic text-gold-300 sm:text-3xl">
-              Pasión Blanca, Desde Bangladesh
-            </span>
-            <span className="mt-3 block text-zinc-300">
-              Your home for Los Blancos news, community, and culture.
-            </span>
-          </p>
-
-          <div
-            className={`${entrance} delay-300 mt-10 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row`}
-          >
-            <Link
-              href="/fans-zone"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-7 py-3 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.8)] transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.98] sm:w-auto"
-            >
-              Join the Fans Zone
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/news"
-              className="inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition-all duration-300 ease-out hover:border-gold-500/50 hover:text-gold-300 active:scale-[0.98] sm:w-auto"
-            >
-              Explore Latest News
-            </Link>
-          </div>
-
-          <p
-            className={`${entrance} delay-500 mt-12 font-display text-sm font-bold uppercase tracking-[0.4em] text-gold-400`}
-          >
-            ¡Hala Madrid!
-          </p>
-        </div>
-      </section>
-
-      {/* Features — obsidian gradient divider separating the hero from the
-          stats banner */}
-      <section className="bg-gradient-to-b from-zinc-900 to-zinc-950">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className={`${entrance} mx-auto max-w-2xl text-center`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-600 dark:text-gold-400">
-              Explore the Hub
-            </p>
-            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-              Everything a Madridista Needs
-            </h2>
-            <p className="mt-4 text-slate-600 dark:text-gray-300">
-              One home for the white faithful — news, community, and merch, all
-              in one place.
-            </p>
-          </div>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, index) => (
-              <Link
-                key={feature.href}
-                href={feature.href}
-                className={`${entrance} ${FEATURE_DELAYS[index]} group relative overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-8 backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-[0_20px_50px_-20px_rgba(212,175,55,0.25)] active:scale-[0.98]`}
-              >
-                <span className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold-300 to-gold-600 transition-transform duration-300 group-hover:scale-x-100" />
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-midnight-950 text-gold-400 transition-colors group-hover:bg-gold-500 group-hover:text-midnight-950 dark:bg-midnight-800">
-                  <feature.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-5 font-display text-xl font-bold text-slate-900 dark:text-white">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-gray-300">
-                  {feature.description}
-                </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900 transition-colors group-hover:text-gold-600 dark:text-white dark:group-hover:text-gold-400">
-                  Explore
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats banner — deepest layer of the obsidian stack */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(212,175,55,0.15),transparent_55%)]"
-        />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mb-10 flex items-center justify-center gap-3 text-gold-600 dark:text-gold-400">
-            <Trophy className="h-6 w-6" />
-            <span className="font-display text-sm font-bold uppercase tracking-[0.3em]">
-              The Most Decorated Club in History
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            {stats.map((stat, index) => (
-              <div
-                key={stat.label}
-                className={`${entrance} ${FEATURE_DELAYS[index]} text-center`}
-              >
-                <div className="text-gradient-gold font-display text-5xl font-extrabold sm:text-6xl">
-                  {stat.value}
-                </div>
-                <div className="mt-2 text-sm font-medium uppercase tracking-widest text-slate-500 dark:text-zinc-400">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Latest News — the two most recent articles in a premium dark grid,
-          replacing the old bottom Shop CTA (that push now lives at the very top
-          of the page). */}
-      <section className="relative overflow-hidden bg-zinc-950 text-white">
-        {/* Cinematic gold glow + midnight depth */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 left-1/4 h-72 w-72 -translate-x-1/2 rounded-full bg-gold-500/10 blur-3xl" />
-          <div className="absolute bottom-[-4rem] right-1/4 h-72 w-72 translate-x-1/2 rounded-full bg-midnight-600/40 blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(212,175,55,0.12),transparent_55%)]" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          {/* Section heading */}
-          <div className={`${entrance} mx-auto max-w-2xl text-center`}>
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold-400">
-              <Newspaper className="h-3.5 w-3.5" />
-              From the Newsroom
-            </p>
-            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Latest <span className="text-gradient-gold">News</span>
-            </h2>
-            <p className="mt-4 text-zinc-300">
-              Match reports, transfers, and tactical breakdowns — straight off
-              the Bernabéu beat.
-            </p>
-          </div>
-
-          {/* Two-up article row — centered flex so a lone article (until a
-              second is published) still reads as intentional rather than
-              stranded in a half-empty grid column. */}
-          <div className="mx-auto mt-14 flex max-w-4xl flex-wrap justify-center gap-6">
-            {latestNews.map((article, index) => {
-              const excerpt = getExcerpt(article.content);
-              return (
-                <Link
-                  key={article.id ?? article.slug}
-                  href={`/news/${article.slug}`}
-                  className={`${entrance} ${
-                    index === 0 ? "delay-100" : "delay-200"
-                  } group flex w-full flex-col overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/40 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-[0_18px_50px_-20px_rgba(212,175,55,0.45)] sm:w-[calc(50%_-_0.75rem)]`}
-                >
-                  {/* Cover image (or on-brand fallback) with a category pill —
-                      the image layer subtly scales up on hover */}
-                  <div
-                    className="relative h-48 overflow-hidden bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 transition-transform duration-500 ease-out group-hover:scale-[1.02] sm:h-56"
-                    style={
-                      article.image_url
-                        ? {
-                            backgroundImage: `linear-gradient(to top, rgba(5,8,20,0.85), rgba(5,8,20,0.15)), url("${article.image_url}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                          }
-                        : undefined
-                    }
+      {/* ===== Editorial index ============================================== */}
+      <section className="border-y border-white/10 bg-midnight-900/40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <ul>
+            {SECTIONS.map((section, i) => (
+              <li key={section.href}>
+                <ScrollReveal delay={i * 0.06}>
+                  <Link
+                    href={section.href}
+                    className="group flex items-center gap-5 border-b border-white/10 py-7 last:border-b-0 sm:gap-8 sm:py-9"
                   >
-                    {!article.image_url ? (
-                      <Newspaper
-                        aria-hidden
-                        className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 text-white/10"
-                      />
-                    ) : null}
-                    <div className="absolute left-4 top-4">
-                      <CategoryBadge category={article.category} />
-                    </div>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex flex-1 flex-col p-6">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatArticleDate(article.created_at)}
-                    </div>
-                    <h3 className="mt-2 line-clamp-2 font-display text-xl font-bold leading-snug text-white transition-colors group-hover:text-gold-300">
-                      {article.title}
-                    </h3>
-                    {excerpt ? (
-                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-300">
-                        {excerpt}
-                      </p>
-                    ) : null}
-                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-400 transition-colors group-hover:text-gold-300">
-                      Read More
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <span
+                      aria-hidden
+                      className="font-display text-2xl font-extrabold tabular-nums text-gold-500/40 transition-colors group-hover:text-gold-400 sm:text-3xl"
+                    >
+                      {String(i + 1).padStart(2, "0")}
                     </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-2xl font-extrabold uppercase leading-none tracking-tight text-white transition-transform duration-300 group-hover:translate-x-1 sm:text-4xl">
+                        {section.title}
+                      </span>
+                      <span className="mt-1.5 block text-sm text-zinc-400">
+                        {section.blurb}
+                      </span>
+                    </span>
+                    <ArrowUpRight className="h-6 w-6 shrink-0 text-zinc-500 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-gold-300 sm:h-8 sm:w-8" />
+                  </Link>
+                </ScrollReveal>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-          {/* View All News — prominent gold CTA to the full newsroom */}
-          <div className="mt-12 flex justify-center">
-            <Link
-              href="/news"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-8 py-3.5 text-sm font-semibold text-midnight-950 shadow-[0_0_30px_-8px_rgba(212,175,55,0.85)] ring-1 ring-gold-200/50 transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.98]"
-            >
-              <Newspaper className="h-4 w-4" />
-              View All News
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+      {/* ===== Honours ====================================================== */}
+      <section className="relative overflow-hidden bg-midnight-950 py-16 sm:py-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_130%,rgba(220,174,43,0.16),transparent_60%)]"
+        />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <p className="text-center font-display text-xs font-black uppercase tracking-[0.3em] text-gold-400">
+              The most decorated club in history
+            </p>
+          </ScrollReveal>
+          <div className="mt-10 grid grid-cols-3 gap-4">
+            {HONOURS.map((stat, i) => (
+              <ScrollReveal key={stat.label} delay={i * 0.08}>
+                <div className="text-center">
+                  <div className="font-display text-4xl font-extrabold leading-none tracking-tight text-gold-300 sm:text-6xl">
+                    {stat.value}
+                  </div>
+                  <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400 sm:text-xs">
+                    {stat.label}
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Latest news ================================================== */}
+      <section className="bg-gradient-to-b from-midnight-950 to-black py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="display-lg font-display uppercase text-white">
+                Latest
+              </h2>
+              <Link
+                href="/news"
+                className="inline-flex h-12 shrink-0 items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-gold-300"
+              >
+                All news
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          <div className="no-scrollbar -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
+            {latestNews.map((article, i) => (
+              <ScrollReveal
+                key={article.id ?? article.slug}
+                delay={i * 0.07}
+                className="w-[84vw] max-w-sm shrink-0 snap-center sm:w-auto sm:max-w-none sm:shrink"
+              >
+                <NewsCard article={article} />
+              </ScrollReveal>
+            ))}
           </div>
         </div>
       </section>

@@ -18,7 +18,8 @@ export default function CartToast() {
   if (!toast) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[80] flex justify-center px-4">
+    // bottom-28 on mobile keeps the toast clear of the floating bottom nav.
+    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[80] flex justify-center px-4 md:bottom-6">
       <button
         key={toast.id}
         type="button"

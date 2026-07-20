@@ -19,6 +19,12 @@ const navLinks = [
   { href: "/about", label: "About" },
 ];
 
+// The floating bottom nav owns Home / Shop / News / Cart on mobile, so the
+// hamburger menu only carries the secondary destinations.
+const mobileMenuLinks = navLinks.filter(
+  (link) => !["/", "/shop", "/news"].includes(link.href)
+);
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -96,8 +102,8 @@ export default function Navbar() {
     "Madridista";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-zinc-800/50 dark:bg-zinc-950/70">
-      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-midnight-950/70">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 md:h-20 lg:px-8">
         {/* Brand / logo — whole area lifts on hover with a soft gold bloom. */}
         <Link
           href="/"
@@ -111,18 +117,18 @@ export default function Navbar() {
             />
             <Image
               src="/twsbd-logo.png"
-              alt="The Whites Bangladesh"
+              alt="The Whites Stories"
               width={80}
               height={80}
               priority
               // Source PNG is white, so invert it to dark in light mode and
               // leave it white in dark mode — always readable on either surface.
-              className="h-20 w-20 object-contain invert transition-all duration-500 ease-out hover:scale-110 hover:-rotate-2 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] dark:invert-0 dark:hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
+              className="h-14 w-14 object-contain invert transition-all duration-500 ease-out hover:scale-110 hover:-rotate-2 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] dark:invert-0 dark:hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] md:h-20 md:w-20"
             />
           </span>
           <span className="font-display text-lg font-extrabold leading-none tracking-tight">
             <span className="text-slate-900 dark:text-white">The Whites</span>{" "}
-            <span className="text-gradient-gold">Bangladesh</span>
+            <span className="text-gradient-gold">Stories</span>
           </span>
         </Link>
 
@@ -204,7 +210,7 @@ export default function Navbar() {
         }`}
       >
         <div className="space-y-1 px-4 py-4">
-          {navLinks.map((link) => (
+          {mobileMenuLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -288,7 +294,7 @@ function CartButton() {
       type="button"
       onClick={openCart}
       aria-label={`Open cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-gold-600 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-gold-300"
+      className="relative hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-gold-600 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-gold-300 md:inline-flex"
     >
       <ShoppingCart className="h-5 w-5" />
       {itemCount > 0 ? (

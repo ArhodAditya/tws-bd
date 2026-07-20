@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { motion, useDragControls } from "framer-motion";
 import {
   Check,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { SPRING } from "@/components/motion/primitives";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/shop";
 import {
@@ -22,6 +24,23 @@ import {
   getShipping,
   type PaymentMethod,
 } from "@/lib/checkout";
+
+// Tracks the mobile breakpoint so the cart can present as a bottom sheet on
+// phones and a side panel from md up. Defaults to the mobile presentation,
+// which is the 80%-of-traffic case.
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return isMobile;
+}
 
 export default function CartDrawer() {
   const {
@@ -44,6 +63,11 @@ export default function CartDrawer() {
   const [payment, setPayment] = useState<PaymentMethod>("partial");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isMobile = useIsMobile();
+  // Drag is started only from the grab handle, so scrolling the sheet body
+  // (item list, checkout form) never gets hijacked into a dismiss gesture.
+  const dragControls = useDragControls();
 
   const shipping = getShipping(district);
   const total = subtotal + shipping;
@@ -116,23 +140,58 @@ export default function CartDrawer() {
       aria-hidden={!isOpen}
     >
       {/* Backdrop */}
-      <div
+      {/* `initial` is required, not decorative: framer-motion only writes
+          styles from its rAF-driven render loop, so without an SSR'd closed
+          state the scrim would paint fully opaque over the page anywhere the
+          frameloop is suspended (background tab, prerender). */}
+      <motion.div
         onClick={closeCart}
-        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0"
-        }`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isOpen ? 1 : 0 }}
+        transition={{ duration: 0.25 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
 
-      {/* Panel — slides in from the right; the transform transition handles
-          both the enter and the exit. */}
-      <aside
+      {/* Bottom sheet on mobile, side panel from md. The panel stays mounted
+          (translated off-screen when closed) so a half-filled checkout form
+          survives closing and reopening the cart. */}
+      <motion.aside
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart and checkout"
-        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-midnight-900 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        drag={isMobile && isOpen ? "y" : false}
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.45 }}
+        onDragEnd={(_, info) => {
+          // Dismiss on a decisive downward flick or a long drag.
+          if (info.offset.y > 130 || info.velocity.y > 600) closeCart();
+        }}
+        // Ships closed from the server (useIsMobile defaults to the mobile
+        // presentation), so the sheet is never stranded open where the
+        // frameloop is suspended.
+        initial={{ y: "100%" }}
+        animate={
+          isMobile
+            ? { y: isOpen ? 0 : "100%", x: 0 }
+            : { x: isOpen ? 0 : "100%", y: 0 }
+        }
+        transition={SPRING}
+        className="absolute inset-x-0 bottom-0 flex max-h-[92svh] flex-col rounded-t-3xl border-t border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-midnight-900 md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:w-full md:max-w-md md:rounded-none md:border-l"
       >
+        {/* Grab handle — the only drag surface, and a visible affordance that
+            the sheet can be flicked away. Mobile only. */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="flex shrink-0 cursor-grab touch-none justify-center pt-3 pb-1 active:cursor-grabbing md:hidden"
+        >
+          <span
+            aria-hidden
+            className="h-1.5 w-11 rounded-full bg-slate-300 dark:bg-white/25"
+          />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-white/10">
           <h2 className="flex items-center gap-2 font-display text-lg font-extrabold text-slate-900 dark:text-white">
@@ -471,7 +530,7 @@ export default function CartDrawer() {
             </div>
           </form>
         )}
-      </aside>
+      </motion.aside>
     </div>
   );
 }

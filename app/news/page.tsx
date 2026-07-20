@@ -4,7 +4,7 @@ import { MOCK_ARTICLES, type ArticleWithAuthor } from "@/lib/articles";
 import { FeaturedNewsCard, NewsCard } from "@/components/NewsCard";
 
 export const metadata: Metadata = {
-  title: "News — The Whites Bangladesh",
+  title: "News — The Whites Stories",
   description:
     "The latest Real Madrid news, match reports, and tactical analysis for Madridistas in Bangladesh.",
 };
@@ -27,19 +27,18 @@ export default async function NewsPage() {
   return (
     <>
       {/* Header — obsidian gradient flowing into the article grid below */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-midnight-900 to-midnight-950 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 left-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_-10%,rgba(212,175,55,0.12),transparent_55%)]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-300">
-            Newsroom
-          </span>
-          <h1 className="mt-5 max-w-3xl font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            The Latest from the <span className="text-gradient-gold">Bernabéu</span>
+          <h1 className="display-xl font-display max-w-3xl uppercase">
+            From the
+            <span className="block text-stroke">Bernabéu</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-zinc-300">
+          <span aria-hidden className="stripe-gold mt-6 block h-1.5 w-28 opacity-80" />
+          <p className="mt-6 max-w-2xl text-base text-zinc-300 sm:text-lg">
             Match reports, breaking transfers, and deep tactical analysis —
             curated for the Madridista faithful of Bangladesh.
           </p>
@@ -53,7 +52,7 @@ export default async function NewsPage() {
       </section>
 
       {/* Article grid — deep cinematic canvas */}
-      <section className="bg-gradient-to-b from-zinc-950 to-black">
+      <section className="bg-gradient-to-b from-midnight-950 to-black">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
           <div className="space-y-8">
             {featured ? <FeaturedNewsCard article={featured} /> : null}

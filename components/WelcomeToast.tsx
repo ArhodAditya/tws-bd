@@ -96,7 +96,7 @@ export default function WelcomeToast() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Welcome to The Whites Bangladesh"
+      aria-label="Welcome to The Whites Stories"
       // z-[9999] + pointer-events-auto so the overlay dominates the screen and
       // can never be hidden behind the navbar (z-50) or any other layer.
       className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300"

@@ -7,7 +7,7 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://twsbd.page"
 ).replace(/\/+$/, "");
 
-export const SITE_NAME = "The Whites Bangladesh";
+export const SITE_NAME = "The Whites Stories";
 
 // Brand logo (absolute URL) used as the publisher logo in structured data and
 // as the OpenGraph image fallback when a product/article has no image.

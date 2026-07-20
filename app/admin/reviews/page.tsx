@@ -9,7 +9,7 @@ import AdminManualReviewForm from "@/components/AdminManualReviewForm";
 import type { FanReviewWithAuthor } from "@/lib/fan-reviews";
 
 export const metadata: Metadata = {
-  title: "Fan Reviews — Admin — The Whites Bangladesh",
+  title: "Fan Reviews — Admin — The Whites Stories",
 };
 
 export default async function AdminReviewsPage() {

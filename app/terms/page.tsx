@@ -6,7 +6,7 @@ import LegalPageShell, {
 } from "@/components/LegalPageShell";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — The Whites Bangladesh",
+  title: "Terms & Conditions — The Whites Stories",
   description:
     "The terms that govern your use of The Whites Stories (TWS) website and purchases.",
 };

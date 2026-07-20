@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarClock } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Events — Coming Soon — The Whites Bangladesh",
+  title: "Events — Coming Soon — The Whites Stories",
   description:
     "TWS Matchday Screenings are coming. We are preparing something massive for the next El Clásico. ¡Hala Madrid!",
 };

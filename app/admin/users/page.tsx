@@ -9,7 +9,7 @@ import UserManagementList, {
 } from "@/components/UserManagementList";
 
 export const metadata: Metadata = {
-  title: "Manage Users — Admin — The Whites Bangladesh",
+  title: "Manage Users — Admin — The Whites Stories",
 };
 
 export default async function AdminUsersPage() {

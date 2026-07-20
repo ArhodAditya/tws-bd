@@ -80,7 +80,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gold-500/15 bg-slate-50 text-slate-500 dark:bg-gradient-to-b dark:from-zinc-950 dark:to-black dark:text-zinc-400">
+    <footer className="border-t border-gold-500/15 bg-slate-50 text-slate-500 dark:bg-gradient-to-b dark:from-midnight-950 dark:to-black dark:text-zinc-400">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Directory grid */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
@@ -91,7 +91,7 @@ export default function Footer() {
                   keep it white in dark mode — readable on either background. */}
               <Image
                 src="/twsbd-logo.png"
-                alt="The Whites Bangladesh"
+                alt="The Whites Stories"
                 width={40}
                 height={40}
                 className="h-10 w-10 object-contain invert dark:invert-0"
@@ -100,7 +100,7 @@ export default function Footer() {
                 <span className="text-slate-900 dark:text-white">
                   The Whites
                 </span>{" "}
-                <span className="text-gradient-gold">Bangladesh</span>
+                <span className="text-gradient-gold">Stories</span>
               </span>
             </div>
             <p className="max-w-xs text-sm leading-relaxed">
@@ -134,7 +134,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 text-xs dark:border-white/10 sm:flex-row">
-          <p>© {year} The Whites Bangladesh. All rights reserved.</p>
+          <p>© {year} The Whites Stories. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link href="/privacy" className={linkClass}>
               Privacy

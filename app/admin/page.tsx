@@ -18,7 +18,7 @@ import { isSuperAdmin } from "@/lib/admin";
 import SyncFootballButton from "@/components/SyncFootballButton";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard — The Whites Bangladesh",
+  title: "Admin Dashboard — The Whites Stories",
 };
 
 export default async function AdminPage() {

@@ -110,7 +110,7 @@ export function getProductDescription(
 
   return (
     summary ||
-    `Order the ${product.name} from The Whites Bangladesh. ¡Hala Madrid!`
+    `Order the ${product.name} from The Whites Stories. ¡Hala Madrid!`
   );
 }
 

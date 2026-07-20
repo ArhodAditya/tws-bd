@@ -14,7 +14,7 @@ import SyncFixturesButton from "@/components/SyncFixturesButton";
 import PredictorSettingsForm from "@/components/PredictorSettingsForm";
 
 export const metadata: Metadata = {
-  title: "Sync Fixtures — The Whites Bangladesh",
+  title: "Sync Fixtures — The Whites Stories",
 };
 
 // Always render fresh: the list reflects the latest synced fixtures.

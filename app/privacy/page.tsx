@@ -6,7 +6,7 @@ import LegalPageShell, {
 } from "@/components/LegalPageShell";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — The Whites Bangladesh",
+  title: "Privacy Policy — The Whites Stories",
   description:
     "How The Whites Stories (TWS) collects, uses, and protects your personal information.",
 };

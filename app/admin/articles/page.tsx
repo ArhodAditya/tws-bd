@@ -8,7 +8,7 @@ import DeleteArticleButton from "@/components/DeleteArticleButton";
 import { formatArticleDate, type ArticleWithAuthor } from "@/lib/articles";
 
 export const metadata: Metadata = {
-  title: "Manage News — Admin — The Whites Bangladesh",
+  title: "Manage News — Admin — The Whites Stories",
 };
 
 export default async function AdminArticlesPage() {

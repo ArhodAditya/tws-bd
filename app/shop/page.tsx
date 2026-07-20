@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Globe, ShieldCheck, ShoppingBag, Star } from "lucide-react";
+import { Globe, ShieldCheck, Star } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import ShopBrowser from "@/components/ShopBrowser";
 import { type Product } from "@/lib/shop";
 
 export const metadata: Metadata = {
-  title: "Shop — The Whites Bangladesh",
+  title: "Shop — The Whites Stories",
   description:
     "Official jerseys, turf trainers and footballs for the Madridista faithful — order directly via WhatsApp. ¡Hala Madrid!",
 };
@@ -97,14 +97,12 @@ export default async function ShopPage() {
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         {/* Header */}
         <header className="mb-8 max-w-3xl animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both">
-          <span className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-gold-300">
-            <ShoppingBag className="h-3.5 w-3.5" />
-            Official Shop
-          </span>
-          <h1 className="mt-5 font-display text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Wear Your <span className="text-gradient-gold">White Pride</span>
+          <h1 className="display-xl font-display uppercase text-white">
+            Wear your
+            <span className="block text-stroke">white pride</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-zinc-300">
+          <span aria-hidden className="stripe-gold mt-6 block h-1.5 w-28 opacity-80" />
+          <p className="mt-6 max-w-2xl text-base text-zinc-300 sm:text-lg">
             Premium jerseys, turf trainers, and match-grade footballs — curated
             for Madridistas in Bangladesh. Order in a tap, straight to our team
             on WhatsApp.
@@ -119,7 +117,7 @@ export default async function ShopPage() {
         {/* ===== Social Proof / Trust Banner — sits below the product grid so
             the gear leads and the social proof reinforces it. ===== */}
         <section
-          aria-label="Why Madridistas trust The Whites Bangladesh"
+          aria-label="Why Madridistas trust The Whites Stories"
           className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out fill-mode-both"
         >
           {/* Cinematic glass panel: deep gradient, glowing gold border, heavy blur */}

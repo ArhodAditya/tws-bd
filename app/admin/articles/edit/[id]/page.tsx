@@ -7,7 +7,7 @@ import EditArticleForm from "@/components/EditArticleForm";
 import type { Article } from "@/lib/articles";
 
 export const metadata: Metadata = {
-  title: "Edit Article — Admin — The Whites Bangladesh",
+  title: "Edit Article — Admin — The Whites Stories",
 };
 
 export default async function EditArticlePage({

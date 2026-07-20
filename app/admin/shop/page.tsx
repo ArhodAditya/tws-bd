@@ -7,7 +7,7 @@ import ProductInventoryList from "@/components/ProductInventoryList";
 import type { Product } from "@/lib/shop";
 
 export const metadata: Metadata = {
-  title: "Shop Inventory — Admin — The Whites Bangladesh",
+  title: "Shop Inventory — Admin — The Whites Stories",
 };
 
 export default async function AdminShopPage() {

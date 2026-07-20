@@ -45,7 +45,7 @@ export async function generateMetadata({
   const article = await getArticle(slug);
 
   if (!article) {
-    return { title: "Article Not Found — The Whites Bangladesh" };
+    return { title: "Article Not Found — The Whites Stories" };
   }
 
   const description = getExcerpt(article.content) || undefined;
@@ -54,7 +54,7 @@ export async function generateMetadata({
   const ogImage = article.image_url ?? SITE_LOGO;
 
   return {
-    title: `${title} — The Whites Bangladesh`,
+    title: `${title} — The Whites Stories`,
     description,
     alternates: { canonical: `/news/${slug}` },
     openGraph: {

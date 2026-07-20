@@ -35,7 +35,7 @@ export async function generateMetadata({
   const product = await getProduct(id);
 
   if (!product) {
-    return { title: "Product Not Found — The Whites Bangladesh" };
+    return { title: "Product Not Found — The Whites Stories" };
   }
 
   const description = getProductDescription(product);
@@ -43,7 +43,7 @@ export async function generateMetadata({
   const ogImage = product.images?.[0] ?? SITE_LOGO;
 
   return {
-    title: `${product.name} — Shop — The Whites Bangladesh`,
+    title: `${product.name} — Shop — The Whites Stories`,
     description,
     alternates: { canonical: `/shop/${id}` },
     openGraph: {

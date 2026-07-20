@@ -13,7 +13,7 @@ import FanReviewCard from "@/components/FanReviewCard";
 import FanReviewForm from "@/components/FanReviewForm";
 
 export const metadata: Metadata = {
-  title: "Fans Zone — The Whites Bangladesh",
+  title: "Fans Zone — The Whites Stories",
   description:
     "The command center for Madridistas in Bangladesh — predict the next match and climb the global leaderboard. ¡Hala Madrid!",
 };
@@ -131,7 +131,7 @@ export default async function FansZonePage() {
               </span>
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-zinc-300">
-              The real heartbeat of The Whites Bangladesh — straight from the
+              The real heartbeat of The Whites Stories — straight from the
               fans.
             </p>
           </Reveal>

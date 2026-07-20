@@ -18,7 +18,7 @@ export default function SocialLinks({ className }: { className?: string }) {
         href={SOCIAL_LINKS.facebook}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="The Whites Bangladesh on Facebook"
+        aria-label="The Whites Stories on Facebook"
         className={linkClass}
       >
         <FacebookIcon className="h-5 w-5" />

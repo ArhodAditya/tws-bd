@@ -7,7 +7,7 @@ import EditProductForm from "@/components/EditProductForm";
 import type { Product } from "@/lib/shop";
 
 export const metadata: Metadata = {
-  title: "Edit Product — Admin — The Whites Bangladesh",
+  title: "Edit Product — Admin — The Whites Stories",
 };
 
 export default async function EditProductPage({

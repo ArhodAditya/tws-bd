@@ -319,7 +319,7 @@ export default function SquadBuilderPage() {
 
           {/* Export footer strip */}
           <p className="mt-3 text-center text-[11px] font-medium uppercase tracking-[0.3em] text-zinc-500">
-            The Whites Bangladesh · ¡Hala Madrid!
+            The Whites Stories · ¡Hala Madrid!
           </p>
         </div>
 

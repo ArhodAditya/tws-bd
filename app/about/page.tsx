@@ -3,9 +3,9 @@ import { Crown, Quote, Sparkles } from "lucide-react";
 import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "About — The Whites Bangladesh",
+  title: "About — The Whites Stories",
   description:
-    "The royal legacy of Real Madrid and the resilient story of The Whites Bangladesh — from The Whites Stories to the biggest Madrid fanpage in the country. ¡Hala Madrid!",
+    "The royal legacy of Real Madrid and the resilient story of The Whites Stories — four pages, three comebacks, and the biggest Madrid fanpage in the country. ¡Hala Madrid!",
 };
 
 // Real Madrid honours, for the hero stat strip.
@@ -15,8 +15,8 @@ const LEGACY_STATS: { value: string; label: string }[] = [
   { value: "36", label: "La Liga titles" },
 ];
 
-// Our origin story as a timeline. The body copy is the EXACT narrative,
-// distributed verbatim across milestones — no words changed.
+// Our origin story as a timeline. The body copy is the canonical narrative —
+// historical nodes intentionally keep the old "The Whites Bangladesh" name.
 const TIMELINE: { date: string; body: string }[] = [
   {
     date: "May 2021",
@@ -35,12 +35,12 @@ const TIMELINE: { date: string; body: string }[] = [
     body: "That third run was our absolute peak—hitting 250K followers and becoming the biggest Madrid fanpage in Bangladesh. We even launched our successful jersey business during this stint.",
   },
   {
-    date: "2026",
-    body: "Sadly, due to complications in 2026, we lost that page too. But as Cristiano's boys, we don't give up.",
+    date: "Earlier 2026",
+    body: "Sadly, due to complications in 2026, we lost that page too. But as Cristiano's boys, we don't give up. We are back and growing again under our new name: The Whites Bangladesh.",
   },
   {
-    date: "Today",
-    body: "We are back and growing again under our new name: The Whites Bangladesh.",
+    date: "July 2026",
+    body: "We already gained 30k in The Whites Bangladesh, so we are changing the name again to The Whites Stories as our well-wishers feel a connection with this name.",
   },
 ];
 
@@ -119,7 +119,7 @@ export default function AboutPage() {
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-slate-600 dark:text-zinc-300">
             Four pages. Three comebacks. One unbreakable community. This is how
-            The Whites Bangladesh came to be.
+            The Whites Stories came to be.
           </p>
         </Reveal>
 

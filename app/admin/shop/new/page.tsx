@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 import NewProductForm from "@/components/NewProductForm";
 
 export const metadata: Metadata = {
-  title: "Add Product — Admin — The Whites Bangladesh",
+  title: "Add Product — Admin — The Whites Stories",
 };
 
 export default async function NewProductPage() {

@@ -17,9 +17,9 @@
   --foreground: #18181b; /* zinc-900 */
 }
 
-/* Dark theme (toggle / system): the cinematic obsidian canvas, light text. */
+/* Dark theme (toggle / system): deep midnight-navy canvas, light text. */
 .dark {
-  --background: #09090b; /* zinc-950 */
+  --background: #060b22; /* midnight-950 */
   --foreground: #e4e4e7; /* zinc-200 */
 }
 
@@ -28,26 +28,135 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-playfair);
+  --font-display: var(--font-bricolage);
 }
 
-/* The Whites Bangladesh — brand palette: white, deep midnight blue, subtle gold */
+/* The Whites Stories — matchday palette: crisp white, deep midnight navy,
+   regal gold, and a shot of stadium green for energetic accents. */
 @theme {
-  --color-midnight-950: #050814;
-  --color-midnight-900: #0a0f24;
-  --color-midnight-800: #111733;
-  --color-midnight-700: #1b2350;
-  --color-midnight-600: #28326b;
+  --color-midnight-950: #060b22;
+  --color-midnight-900: #0b1330;
+  --color-midnight-800: #131d45;
+  --color-midnight-700: #1e2c66;
+  --color-midnight-600: #2c3f8f;
 
-  --color-gold-200: #f6ecc4;
-  --color-gold-300: #efdd9e;
-  --color-gold-400: #e3c66e;
-  --color-gold-500: #d4af37;
-  --color-gold-600: #b6912a;
+  --color-gold-200: #f8eec2;
+  --color-gold-300: #f1dd96;
+  --color-gold-400: #e8c860;
+  --color-gold-500: #dcae2b;
+  --color-gold-600: #bd9022;
+  /* Light-mode text gold: 4.75:1 on white, so gold-on-light copy stays
+     readable. Used by `text-gold-700` across the navbar, footer and cart. */
+  --color-gold-700: #8f6d18;
+
+  --color-pitch-200: #b6f5cf;
+  --color-pitch-300: #7dedab;
+  --color-pitch-400: #3ddf85;
+  --color-pitch-500: #12c467;
+  --color-pitch-600: #0b9e52;
 }
 
 body {
   font-family: var(--font-geist-sans), "Segoe UI", system-ui, Arial, sans-serif;
+}
+
+/* Hide the scrollbar on swipeable snap rows (mobile shelves) while keeping
+   the container scrollable. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dead-frameloop fallback. When requestAnimationFrame never fires (background
+   tab, some in-app browsers, headless/prerender renderers) framer-motion stays
+   frozen at its `initial` values and content would render invisible. The
+   escape hatch in components/motion/primitives.tsx adds `.motion-bail` to
+   <html>; `!important` outranks framer-motion's inline styles and snaps
+   everything to its resting state. Mirrors the <noscript> override. */
+.motion-bail [data-motion] {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+}
+
+/* ===== Display typography =================================================
+   Fluid matchday headline scale. Capped at 5.5rem so the hero never shouts
+   past the viewport, and tracking stays above -0.04em so heavy weights never
+   collide at the large end. */
+.display-xl {
+  font-size: clamp(2.75rem, 9vw, 5.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+.display-lg {
+  font-size: clamp(2rem, 6.5vw, 3.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+/* Outlined "stadium" type — used sparingly for a second headline line so the
+   hero reads as sports-magazine rather than flat marketing copy. */
+.text-stroke {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-gold-500);
+}
+@media (min-width: 640px) {
+  .text-stroke {
+    -webkit-text-stroke-width: 2px;
+  }
+}
+
+/* ===== Brutalist editorial ================================================
+   Harsh diagonal cut used on matchday news blocks. */
+.clip-diagonal {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 2.5rem), 0 100%);
+}
+.clip-diagonal-inv {
+  clip-path: polygon(0 2.5rem, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Hard-edged hazard stripe — a matchday accent rule, not a decorative border. */
+.stripe-gold {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-gold-500) 0 0.5rem,
+    transparent 0.5rem 1rem
+  );
+}
+
+/* ===== Trading-card sheen =================================================
+   Diagonal specular band that sweeps across a product card on hover, giving
+   the "holo trading card" read. Pure transform, GPU-friendly. */
+.card-holo::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.16) 47%,
+    rgba(248, 238, 194, 0.3) 51%,
+    transparent 60%
+  );
+  transform: translateX(-72%);
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.group:hover .card-holo::after {
+  transform: translateX(72%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-holo::after {
+    transition: none;
+  }
 }
 
 /* The base surface is driven by Tailwind `dark:` classes on <body> (see

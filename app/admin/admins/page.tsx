@@ -8,7 +8,7 @@ import { getFanName } from "@/lib/fans";
 import AddAdminForm from "@/components/AddAdminForm";
 
 export const metadata: Metadata = {
-  title: "Manage Admins — Admin — The Whites Bangladesh",
+  title: "Manage Admins — Admin — The Whites Stories",
 };
 
 // Clean access-denied state shown to anyone who isn't the super-admin. We render

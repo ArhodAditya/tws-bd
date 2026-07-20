@@ -27,12 +27,20 @@ export default function HomeHero() {
           never exposes an edge. */}
       <Parallax distance={60} className="absolute inset-0 -z-20">
         <div className="relative h-[125%] w-full -translate-y-[8%]">
+          {/* `unoptimized` serves /hero-bg.png straight from static hosting,
+              bypassing Vercel's image optimizer. Trade-off: every visitor
+              downloads the full 2.16 MB PNG rather than a ~150 KB WebP, which
+              is a real cost on a mostly-mobile audience — revisit once the
+              production failure is confirmed. Source is 1531x1027, so the
+              filename case and path are exact and the file is small enough
+              that an optimizer timeout was never plausible. */}
           <Image
             src="/hero-bg.png"
             alt=""
             aria-hidden
             fill
             priority
+            unoptimized
             sizes="100vw"
             className="object-cover object-[center_20%]"
           />

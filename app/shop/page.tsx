@@ -71,16 +71,17 @@ export default async function ShopPage() {
 
   return (
     <>
-      {/* Fixed, optimized background photo with a dark gradient wash so the
-          cards and copy stay readable. next/image (not bg-[url]) serves a
-          right-sized, compressed asset instead of the full 6.5 MB original. */}
+      {/* Fixed background photo with a dark gradient wash so the cards and copy
+          stay readable. The source is 1600px wide and sits behind an opacity-20
+          layer plus a heavy gradient, so default quality (75) is imperceptible
+          here — quality={100} only inflated the optimizer's work. */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <Image
-          alt="Background"
+          alt=""
+          aria-hidden
           className="object-cover opacity-40 dark:opacity-20"
           fill
           priority
-          quality={100}
           sizes="100vw"
           src="/shop-bg.jpeg"
         />

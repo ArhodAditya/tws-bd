@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Next 16 requires non-default quality values to be allowlisted. The shop
-    // background <Image> requests quality={100}.
-    qualities: [75, 100],
+    // Next 16 requires non-default quality values to be allowlisted. Nothing
+    // requests a non-default quality any more, so only the default (75) is
+    // permitted — keeping 100 available just invites expensive transforms.
+    qualities: [75],
     // Allow Google account profile pictures (e.g. lh3.googleusercontent.com)
     // so they can be served through next/image.
     remotePatterns: [

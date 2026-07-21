@@ -174,10 +174,17 @@ export default async function ArticlePage({
       </header>
 
       {/* Cover image — inset rounded magazine card at every breakpoint, sitting
-          clear of the header metadata rather than bleeding up into it. */}
+          clear of the header metadata rather than bleeding up into it.
+
+          Desktop caps the height at 400px so the cover doesn't shove the body
+          copy below the fold. That's an explicit height rather than max-height:
+          pairing max-height with aspect-video makes the browser shrink the
+          *width* to hold 16:9, pulling the card off the text column's right
+          edge. Releasing the ratio keeps it full-bleed to the measure, and
+          background-size:cover absorbs the wider crop. */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div
-          className="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] dark:border-zinc-800/50 md:mt-8"
+          className="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] dark:border-zinc-800/50 md:mt-8 md:aspect-auto md:h-[400px]"
           style={
             article.image_url
               ? {
@@ -202,10 +209,16 @@ export default async function ArticlePage({
           defaults with dark:prose-invert preserving the cinematic dark canvas.
           rehype-raw compiles inline HTML snippets (gold/cursive spans etc.);
           those carry inline styles, which override the inherited base font by
-          normal CSS precedence. */}
+          normal CSS precedence.
+
+          Justified measure (broadsheet convention) with hyphens-auto to break
+          long words — without it, narrow phone columns open rivers of
+          whitespace. Hyphenation keys off <html lang="en"> in the root layout.
+          Headings opt back out: justify stretches a heading that wraps, and
+          display type shows the gaps far more than body copy does. */}
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:py-12 lg:px-8">
         {content ? (
-          <div className="prose max-w-none prose-zinc font-['Times_New_Roman',_Times,_serif] md:prose-lg dark:prose-invert prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-700 dark:prose-p:text-zinc-400 prose-li:text-zinc-700 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-white prose-a:font-medium prose-a:text-amber-600 hover:prose-a:text-amber-500 dark:prose-a:text-amber-400 dark:hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800/50 prose-img:shadow-2xl">
+          <div className="prose max-w-none prose-zinc text-justify hyphens-auto font-['Times_New_Roman',_Times,_serif] md:prose-lg dark:prose-invert prose-headings:text-left prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-700 dark:prose-p:text-zinc-400 prose-li:text-zinc-700 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-white prose-a:font-medium prose-a:text-amber-600 hover:prose-a:text-amber-500 dark:prose-a:text-amber-400 dark:hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800/50 prose-img:shadow-2xl">
             {/* remark-breaks turns a single newline (Enter in the editor) into a
                 hard <br>, so line breaks the admin types render on the live site
                 instead of being collapsed into a space by standard Markdown. */}

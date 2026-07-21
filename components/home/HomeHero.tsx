@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { getImageProps } from "next/image";
+import { preload } from "react-dom";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { HERO_BG_SRC } from "@/lib/assets";
+import { HERO_BG_MOBILE_SRC, HERO_BG_SRC } from "@/lib/assets";
 import {
   MaskLine,
   Parallax,
@@ -22,6 +23,50 @@ export default function HomeHero() {
   // useMotionEscapeHatch for why.
   const bail = useMotionEscapeHatch();
 
+  // Art direction. The landscape original only ever showed a ~third-of-width
+  // slice on a phone, so mobile gets a dedicated 9:16 crop that holds both the
+  // ball and the bag.
+  //
+  // This is a <picture> rather than two images toggled with hidden/md:block,
+  // because that toggle would download BOTH files: `display:none` does not
+  // stop an <img> from fetching its src, and `priority` compounds it by
+  // emitting a preload link that fetches regardless of CSS. <picture> resolves
+  // `media` before issuing any request, so exactly one file is ever fetched.
+  const heroImage = {
+    alt: "",
+    fill: true,
+    priority: true,
+    sizes: "100vw",
+  } as const;
+  const { props: heroDesktop } = getImageProps({
+    ...heroImage,
+    src: HERO_BG_SRC,
+  });
+  const { props: heroMobile } = getImageProps({
+    ...heroImage,
+    src: HERO_BG_MOBILE_SRC,
+  });
+  const { srcSet: heroMobileSrcSet, ...heroImageProps } = heroMobile;
+
+  // getImageProps hands back <img> props only — the preload that <Image
+  // priority> injects lives inside the component and is lost here, and this is
+  // the LCP element. Re-issue it by hand: `media` scopes each hint to one
+  // breakpoint, so the preload still resolves to exactly one file.
+  preload(heroDesktop.src, {
+    as: "image",
+    imageSrcSet: heroDesktop.srcSet,
+    imageSizes: heroDesktop.sizes,
+    media: "(min-width: 768px)",
+    fetchPriority: "high",
+  });
+  preload(heroMobile.src, {
+    as: "image",
+    imageSrcSet: heroMobile.srcSet,
+    imageSizes: heroMobile.sizes,
+    media: "(max-width: 767.98px)",
+    fetchPriority: "high",
+  });
+
   return (
     <section className="relative isolate flex min-h-[70svh] items-end overflow-hidden bg-midnight-950 text-white md:min-h-[92svh]">
       {/* Parallax photographic backdrop. Scaled past the frame so the drift
@@ -32,20 +77,20 @@ export default function HomeHero() {
               raw 2.16 MB PNG. Served from Cloudinary's `upload` path, which
               cloudinaryLoader.ts rewrites to f_auto/q_auto at the requested
               width (~183 KB at w=1920, vs 2.27 MB raw). */}
-          {/* The backdrop is a 3:2 landscape frame, so a portrait phone keeps
-              only a ~third-of-the-width slice under object-cover — not enough
-              for both the ball (~20% across) and the bag (~50–80%). Mobile
-              therefore frames the bag, whose crown mark and wordmark carry the
-              brand; desktop has the room to hold the whole scene. */}
-          <Image
-            src={HERO_BG_SRC}
-            alt=""
-            aria-hidden
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[72%_center] md:object-[center_20%]"
-          />
+          {/* One <img> whose source swaps at the md breakpoint. The mobile
+              asset is pre-cropped, so it just needs centring; the landscape
+              desktop asset keeps its established 50% 20% focal point. */}
+          <picture>
+            <source media="(min-width: 768px)" srcSet={heroDesktop.srcSet} />
+            <source srcSet={heroMobileSrcSet} />
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- alt="" comes from getImageProps */}
+            <img
+              {...heroImageProps}
+              aria-hidden
+              fetchPriority="high"
+              className="object-cover object-center md:object-[center_20%]"
+            />
+          </picture>
         </div>
       </Parallax>
 

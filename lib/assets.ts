@@ -30,6 +30,15 @@ export const HERO_BG_SRC = cloudinaryAsset(
   "/hero-bg.png"
 );
 
+// Portrait companion to HERO_BG_SRC, shot for 9:16 so phones get the ball and
+// the bag in frame instead of a slice of the landscape original. Art-directed
+// in HomeHero via <picture>, so only one of the two is ever downloaded.
+export const HERO_BG_MOBILE_SRC = cloudinaryAsset(
+  "v1784618523",
+  "site-assets/mhero-bg.png",
+  "/mhero-bg.png"
+);
+
 export const SITE_LOGO_SRC = cloudinaryAsset(
   "v1784598192",
   "site-assets/twsbd-logo.png",

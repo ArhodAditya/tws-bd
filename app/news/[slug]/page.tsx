@@ -173,12 +173,11 @@ export default async function ArticlePage({
         </div>
       </header>
 
-      {/* Cover image — full-bleed edge-to-edge on mobile (negative margins
-          cancel the wrapper padding), floating rounded magazine card from md:
-          up. */}
+      {/* Cover image — inset rounded magazine card at every breakpoint, sitting
+          clear of the header metadata rather than bleeding up into it. */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div
-          className="relative -mx-4 -mt-8 h-56 overflow-hidden border-0 border-zinc-200 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] dark:border-zinc-800/50 sm:-mx-6 sm:h-72 md:mx-0 md:h-80 md:rounded-2xl md:border"
+          className="relative mt-6 aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-midnight-700 via-midnight-900 to-zinc-950 shadow-[0_25px_60px_-25px_rgba(0,0,0,0.9)] dark:border-zinc-800/50 md:mt-8"
           style={
             article.image_url
               ? {

@@ -23,7 +23,7 @@ export default function HomeHero() {
   const bail = useMotionEscapeHatch();
 
   return (
-    <section className="relative isolate flex min-h-[92svh] items-end overflow-hidden bg-midnight-950 text-white">
+    <section className="relative isolate flex min-h-[70svh] items-end overflow-hidden bg-midnight-950 text-white md:min-h-[92svh]">
       {/* Parallax photographic backdrop. Scaled past the frame so the drift
           never exposes an edge. */}
       <Parallax distance={60} className="absolute inset-0 -z-20">
@@ -32,6 +32,11 @@ export default function HomeHero() {
               raw 2.16 MB PNG. Served from Cloudinary's `upload` path, which
               cloudinaryLoader.ts rewrites to f_auto/q_auto at the requested
               width (~183 KB at w=1920, vs 2.27 MB raw). */}
+          {/* The backdrop is a 3:2 landscape frame, so a portrait phone keeps
+              only a ~third-of-the-width slice under object-cover — not enough
+              for both the ball (~20% across) and the bag (~50–80%). Mobile
+              therefore frames the bag, whose crown mark and wordmark carry the
+              brand; desktop has the room to hold the whole scene. */}
           <Image
             src={HERO_BG_SRC}
             alt=""
@@ -39,7 +44,7 @@ export default function HomeHero() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[center_20%]"
+            className="object-cover object-[72%_center] md:object-[center_20%]"
           />
         </div>
       </Parallax>

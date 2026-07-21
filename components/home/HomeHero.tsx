@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { HERO_BG_SRC } from "@/lib/assets";
 import {
   MaskLine,
   Parallax,
@@ -27,13 +28,12 @@ export default function HomeHero() {
           never exposes an edge. */}
       <Parallax distance={60} className="absolute inset-0 -z-20">
         <div className="relative h-[125%] w-full -translate-y-[8%]">
-          {/* Optimized (WebP/AVIF) — this is the LCP image on a mostly-mobile
-              audience, so it must not be served as the raw 2.16 MB PNG. The
-              earlier `unoptimized` bypass was a workaround for the optimizer
-              choking on the 12 MP logo and shop background; both are now
-              resized, so the hero goes back through the optimizer. */}
+          {/* LCP image on a mostly-mobile audience, so it must never be the
+              raw 2.16 MB PNG. Served from Cloudinary's `upload` path, which
+              cloudinaryLoader.ts rewrites to f_auto/q_auto at the requested
+              width (~183 KB at w=1920, vs 2.27 MB raw). */}
           <Image
-            src="/hero-bg.png"
+            src={HERO_BG_SRC}
             alt=""
             aria-hidden
             fill

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import SocialLinks from "@/components/SocialLinks";
+import { SITE_LOGO_SRC } from "@/lib/assets";
 
 // Premium multi-column directory footer. Server component (no hooks) so it can
 // live directly in the root layout.
@@ -90,7 +91,7 @@ export default function Footer() {
               {/* Source PNG is white: invert it to dark on the light surface,
                   keep it white in dark mode — readable on either background. */}
               <Image
-                src="/twsbd-logo.png"
+                src={SITE_LOGO_SRC}
                 alt="The Whites Stories"
                 width={40}
                 height={40}

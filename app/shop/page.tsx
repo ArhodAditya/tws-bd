@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Globe, ShieldCheck, Star } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import ShopBrowser from "@/components/ShopBrowser";
+import { SHOP_BG_SRC } from "@/lib/assets";
 import { type Product } from "@/lib/shop";
 
 export const metadata: Metadata = {
@@ -83,7 +84,7 @@ export default async function ShopPage() {
           fill
           priority
           sizes="100vw"
-          src="/shop-bg.jpeg"
+          src={SHOP_BG_SRC}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/80 to-slate-950 dark:from-midnight-950/60 dark:via-midnight-950/90 dark:to-midnight-950" />
       </div>

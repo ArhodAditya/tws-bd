@@ -8,6 +8,7 @@ import { LogOut, Menu, ShieldCheck, ShoppingCart, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useCart } from "@/context/CartContext";
+import { SITE_LOGO_SRC } from "@/lib/assets";
 import SocialLinks from "@/components/SocialLinks";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -116,7 +117,7 @@ export default function Navbar() {
               className="absolute inset-0 -z-10 rounded-full bg-gold-500/40 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100"
             />
             <Image
-              src="/twsbd-logo.png"
+              src={SITE_LOGO_SRC}
               alt="The Whites Stories"
               width={80}
               height={80}

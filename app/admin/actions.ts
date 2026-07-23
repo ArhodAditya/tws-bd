@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isSuperAdmin, isCurrentUserAdmin } from "@/lib/admin";
+import { isSuperAdmin } from "@/lib/admin";
+import { requireAdmin } from "@/lib/admin-server";
 
 export type SyncResult = {
   success: boolean;
@@ -15,23 +16,6 @@ export type ActionResult = {
   success: boolean;
   message?: string;
 };
-
-// Re-verify the caller is an admin. Server Actions are reachable via direct
-// POST, so the page gate alone is never enough. Returns the authenticated
-// user's id on success so callers can attribute writes (e.g. an article's
-// author_id) to the session rather than trusting a client-supplied value.
-async function requireAdmin(): Promise<ActionResult & { userId?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, message: "You must be signed in." };
-
-  if (!(await isCurrentUserAdmin(supabase))) {
-    return { success: false, message: "Admins only." };
-  }
-  return { success: true, userId: user.id };
-}
 
 // Toggle whether a user appears on the public Fan Zone leaderboard. Uses the
 // service-role client so an admin can update *another* user's row (profiles RLS
@@ -262,16 +246,9 @@ export async function addAdminByEmail(email: string): Promise<ActionResult> {
 export async function syncFootballData(): Promise<SyncResult> {
   // Server Actions are reachable via direct POST requests, not just our UI, so
   // re-verify the admin role here — never trust the page gate alone.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, message: "You must be signed in." };
-  }
-
-  if (!(await isCurrentUserAdmin(supabase))) {
-    return { success: false, message: "Admins only." };
+  const gate = await requireAdmin();
+  if (!gate.success) {
+    return { success: false, message: gate.message ?? "Admins only." };
   }
 
   const cronSecret = process.env.CRON_SECRET;

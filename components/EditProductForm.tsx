@@ -10,6 +10,8 @@ import {
   FASHION_DEFAULT_SIZES,
   parseCustomSizeChart,
   resolveSizePattern,
+  toList,
+  toShopCategory,
   type Product,
   type ShopCategory,
   type SizeChartRow,
@@ -17,14 +19,6 @@ import {
 } from "@/lib/shop";
 import ImageUploader from "@/components/ImageUploader";
 import SizingBlueprintSelector from "@/components/SizingBlueprintSelector";
-
-// Split a comma / newline separated string into a clean string[].
-function toList(input: string): string[] {
-  return input
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 export default function EditProductForm({ product }: { product: Product }) {
   const router = useRouter();
@@ -34,8 +28,8 @@ export default function EditProductForm({ product }: { product: Product }) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description ?? "");
   const [price, setPrice] = useState(String(product.price));
-  const [category, setCategory] = useState<ShopCategory>(
-    product.category as ShopCategory
+  const [category, setCategory] = useState<ShopCategory>(() =>
+    toShopCategory(product.category)
   );
   const [sizePattern, setSizePattern] = useState<SizePattern>(() =>
     resolveSizePattern(product)

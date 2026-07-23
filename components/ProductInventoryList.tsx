@@ -116,6 +116,8 @@ export default function ProductInventoryList({
                     src={product.images[0]}
                     alt={product.name}
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover"
                   />
                 ) : null}

@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
 import { isCurrentUserAdmin } from "@/lib/admin";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type CloudinarySignature = {
   cloudName: string;
@@ -23,8 +24,21 @@ export type SignResult =
 // are returned. Cloudinary rejects a signature once its timestamp is stale.
 export async function signCloudinaryUpload(): Promise<SignResult> {
   const supabase = await createClient();
-  if (!(await isCurrentUserAdmin(supabase))) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await isCurrentUserAdmin(supabase))) {
     return { ok: false, message: "Admins only." };
+  }
+
+  // Throttle signature spam: 60 per 10 minutes per admin. A gallery upload
+  // legitimately bursts (one signature per file), so the window is generous.
+  const rl = rateLimit(`cloudinary-sign:${user.id}`, 60, 10 * 60_000);
+  if (!rl.ok) {
+    return {
+      ok: false,
+      message: `Too many uploads — try again in ${rl.retryAfterSeconds}s.`,
+    };
   }
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;

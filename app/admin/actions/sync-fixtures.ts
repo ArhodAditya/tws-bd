@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
-import { isCurrentUserAdmin } from "@/lib/admin";
+import { requireAdmin } from "@/lib/admin-server";
 import {
   fetchAndUpsertFixtures,
   type SyncFixturesResult,
@@ -14,19 +13,12 @@ import {
 // runtime error in the server-actions loader). Consumers import the type
 // directly from "@/lib/sync/fixtures" instead.
 
-// Server Actions are reachable via direct POST, so the page gate alone is never
-// enough — re-verify the caller is an admin here.
-async function isAdmin(): Promise<boolean> {
-  const supabase = await createClient();
-  return isCurrentUserAdmin(supabase);
-}
-
 /**
  * Admin-triggered Sofascore fixture sync. Verifies the caller is an admin, runs
  * the shared sync core, then revalidates the pages that show fixtures.
  */
 export async function syncLatestFixtures(): Promise<SyncFixturesResult> {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin()).success) {
     return { success: false, message: "Admins only — please sign in as an admin." };
   }
 

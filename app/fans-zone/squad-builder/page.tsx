@@ -647,6 +647,8 @@ function PlayerAvatar({ player }: { player: SquadPlayer }) {
         alt={displayName(player)}
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
+        loading="lazy"
+        decoding="async"
         className="h-10 w-10 shrink-0 rounded-full bg-white/5 object-cover ring-1 ring-white/15"
       />
     );

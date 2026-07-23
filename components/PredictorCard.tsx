@@ -58,6 +58,8 @@ function TeamCrest({
         alt={name}
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
+        loading="lazy"
+        decoding="async"
         className="h-14 w-14 rounded-full bg-slate-100 object-contain ring-1 ring-gray-200 dark:bg-white/5 dark:ring-white/15"
       />
     );

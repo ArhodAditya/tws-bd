@@ -34,6 +34,33 @@ export const CATEGORY_LABEL: Record<ShopCategory, string> = {
   accessories: "Accessories",
 };
 
+// `products.category` is a free-text column, so every read is really a string.
+// These two helpers are the only places that reconcile it with the union —
+// callers no longer sprinkle `as ShopCategory` assertions over DB rows.
+const CATEGORY_LABEL_LOOKUP: Record<string, string> = CATEGORY_LABEL;
+
+// Display label for a raw category value, tolerating legacy/unknown values.
+export function categoryLabel(value: string): string {
+  return CATEGORY_LABEL_LOOKUP[value] ?? value;
+}
+
+// Narrow a raw category value to the union, falling back to the default bucket
+// rather than asserting an unvalidated string into it.
+export function toShopCategory(value: string): ShopCategory {
+  return SHOP_CATEGORIES.includes(value as ShopCategory)
+    ? (value as ShopCategory)
+    : "kits";
+}
+
+// Split a comma / newline separated string into a clean string[]. Shared by the
+// New/Edit product forms for the sizes field.
+export function toList(input: string): string[] {
+  return input
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 // --- Sizing blueprints ------------------------------------------------------
 // Which size chart the product page renders: the standard jersey chart, the
 // fixed winter-drop fashion chart, or admin-typed custom measurements.

@@ -1,33 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
-import { Gem, Shirt, ShoppingBag, Volleyball } from "lucide-react";
 import { MagneticTilt } from "@/components/motion/primitives";
 import {
-  CATEGORY_LABEL,
-  formatPrice,
-  type Product,
-  type ShopCategory,
-} from "@/lib/shop";
-
-// Per-category accent icon, reused for the image fallback.
-const CATEGORY_ICON: Record<ShopCategory, typeof Shirt> = {
-  kits: Shirt,
-  streetwear: Gem,
-  accessories: Volleyball,
-};
+  CATEGORY_ICON,
+  CATEGORY_ICON_FALLBACK,
+} from "@/components/shop/categoryIcon";
+import { categoryLabel, formatPrice, type Product } from "@/lib/shop";
 
 function ProductImage({
   product,
+  index,
   className,
 }: {
   product: Product;
+  index: number;
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const src = product.images?.[0];
-  const Icon = CATEGORY_ICON[product.category as ShopCategory] ?? ShoppingBag;
+  const Icon = CATEGORY_ICON[product.category] ?? CATEGORY_ICON_FALLBACK;
 
   if (src && !failed) {
     return (
@@ -37,6 +30,12 @@ function ProductImage({
         alt={product.name}
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
+        // The first row is above the fold on both the shop grid and the home
+        // shelves, so it loads eagerly — index 0 is the LCP candidate. Everything
+        // further down defers until it scrolls into view.
+        loading={index < 4 ? "eager" : "lazy"}
+        fetchPriority={index === 0 ? "high" : "auto"}
+        decoding="async"
         className={className}
       />
     );
@@ -53,7 +52,10 @@ function ProductImage({
 // Premium trading-card treatment: gold foil frame, a holo sheen that sweeps on
 // hover, hard-edged category tag, and the price set in display weight like a
 // kit number. Magnetic tilt is mouse-only so carousel swiping stays native.
-export default function ProductCard({
+//
+// Memoised: the shop grid re-renders on every category-filter change, and the
+// cards that survive the filter have identical props — memo lets them skip it.
+function ProductCard({
   product,
   index = 0,
   className,
@@ -80,6 +82,7 @@ export default function ProductCard({
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-midnight-950">
           <ProductImage
             product={product}
+            index={index}
             className={`h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
               soldOut ? "opacity-45 grayscale" : ""
             }`}
@@ -96,7 +99,7 @@ export default function ProductCard({
 
           {/* Hard-edged category tag — square corners against the rounded frame */}
           <span className="absolute left-0 top-4 bg-gold-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-midnight-950">
-            {CATEGORY_LABEL[product.category as ShopCategory] ?? product.category}
+            {categoryLabel(product.category)}
           </span>
 
           {product.badge_text ? (
@@ -130,3 +133,5 @@ export default function ProductCard({
     </MagneticTilt>
   );
 }
+
+export default memo(ProductCard);

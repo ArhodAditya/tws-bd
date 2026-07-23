@@ -8,20 +8,13 @@ import {
   SHOP_CATEGORIES,
   CATEGORY_LABEL,
   FASHION_DEFAULT_SIZES,
+  toList,
   type ShopCategory,
   type SizeChartRow,
   type SizePattern,
 } from "@/lib/shop";
 import ImageUploader from "@/components/ImageUploader";
 import SizingBlueprintSelector from "@/components/SizingBlueprintSelector";
-
-// Split a comma / newline separated string into a clean string[].
-function toList(input: string): string[] {
-  return input
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 export default function NewProductForm() {
   const router = useRouter();

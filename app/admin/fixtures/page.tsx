@@ -180,6 +180,8 @@ function FixtureCrest({
       src={logoUrl}
       alt={name}
       referrerPolicy="no-referrer"
+      loading="lazy"
+      decoding="async"
       className="h-7 w-7 shrink-0 rounded-full bg-white object-contain ring-1 ring-gray-200 dark:bg-white/5 dark:ring-white/15"
     />
   );

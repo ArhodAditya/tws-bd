@@ -4,7 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isCurrentUserAdmin } from "@/lib/admin";
+import { requireAdmin } from "@/lib/admin-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { MAX_DISPLAY_NAME_LENGTH, MAX_REVIEW_LENGTH } from "@/lib/fan-reviews";
 
@@ -63,21 +63,6 @@ export async function submitFanReview(
   // The new review is pending, so the public wall doesn't change yet — but
   // refresh the moderation queue so an admin sees it straight away.
   revalidatePath("/admin/reviews");
-  return { success: true };
-}
-
-// Re-verify the caller is an admin. Server Actions are reachable via direct
-// POST, so the page gate alone is never enough. (Mirrors app/admin/actions.ts.)
-async function requireAdmin(): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, message: "You must be signed in." };
-
-  if (!(await isCurrentUserAdmin(supabase))) {
-    return { success: false, message: "Admins only." };
-  }
   return { success: true };
 }
 

@@ -107,6 +107,8 @@ export default function ImageUploader({
               <img
                 src={url}
                 alt={`Upload ${index + 1}`}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-cover"
               />
               {/* First image is the storefront thumbnail. */}

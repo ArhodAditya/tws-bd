@@ -1,21 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isCurrentUserAdmin } from "@/lib/admin";
+import { requireAdmin } from "@/lib/admin-server";
 import type { PredictorSettingsResult } from "@/lib/predictor-settings";
 
 // NOTE: A "use server" module may only export async functions. Do NOT re-export
 // types (e.g. PredictorSettingsResult) from here — consumers import them from
 // "@/lib/predictor-settings" instead. (Same constraint as sync-fixtures.ts.)
-
-// Server Actions are reachable via direct POST, so the page gate alone is never
-// enough — re-verify the caller is an admin here.
-async function isAdmin(): Promise<boolean> {
-  const supabase = await createClient();
-  return isCurrentUserAdmin(supabase);
-}
 
 /**
  * Update the global Match Predictor display settings (the off-season kill
@@ -29,7 +21,7 @@ export async function updatePredictorSettings(input: {
   isActive: boolean;
   offlineMessage: string;
 }): Promise<PredictorSettingsResult> {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin()).success) {
     return { success: false, message: "Admins only — please sign in as an admin." };
   }
 

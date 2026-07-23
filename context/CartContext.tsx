@@ -14,9 +14,14 @@ import {
 export type CartItem = {
   id: string; // product id
   name: string;
-  price: number;
+  price: number; // per-unit price, incl. the custom-font fee when customName is set
   size: string | null;
   image: string | null;
+  // Free-text custom name/number the buyer typed for a jersey (e.g.
+  // "VINÍCIUS JR - 7"). null when no customisation was requested. Part of a
+  // line's identity, so the same jersey+size with different fonts stays a
+  // separate line instead of merging.
+  customName: string | null;
   quantity: number;
 };
 
@@ -27,8 +32,13 @@ type CartContextValue = {
   itemCount: number;
   subtotal: number;
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  removeItem: (id: string, size: string | null) => void;
-  updateQuantity: (id: string, size: string | null, quantity: number) => void;
+  removeItem: (id: string, size: string | null, customName: string | null) => void;
+  updateQuantity: (
+    id: string,
+    size: string | null,
+    customName: string | null,
+    quantity: number
+  ) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
@@ -49,9 +59,10 @@ const ADD_MESSAGES = [
   "¡Vamos! White pride secured. ✨",
 ];
 
-// A cart line is unique per product + size, so the same jersey in two sizes is
-// two lines.
-const lineKey = (id: string, size: string | null) => `${id}__${size ?? ""}`;
+// A cart line is unique per product + size + custom name, so the same jersey in
+// two sizes — or with two different custom names — is two separate lines.
+const lineKey = (id: string, size: string | null, customName: string | null) =>
+  `${id}__${size ?? ""}__${customName ?? ""}`;
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -96,11 +107,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity">, quantity = 1) => {
       setItems((prev) => {
-        const key = lineKey(item.id, item.size);
-        const existing = prev.find((p) => lineKey(p.id, p.size) === key);
+        const key = lineKey(item.id, item.size, item.customName);
+        const existing = prev.find(
+          (p) => lineKey(p.id, p.size, p.customName) === key
+        );
         if (existing) {
           return prev.map((p) =>
-            lineKey(p.id, p.size) === key
+            lineKey(p.id, p.size, p.customName) === key
               ? { ...p, quantity: p.quantity + quantity }
               : p
           );
@@ -115,17 +128,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const removeItem = useCallback((id: string, size: string | null) => {
-    setItems((prev) =>
-      prev.filter((p) => lineKey(p.id, p.size) !== lineKey(id, size))
-    );
-  }, []);
+  const removeItem = useCallback(
+    (id: string, size: string | null, customName: string | null) => {
+      setItems((prev) =>
+        prev.filter(
+          (p) =>
+            lineKey(p.id, p.size, p.customName) !== lineKey(id, size, customName)
+        )
+      );
+    },
+    []
+  );
 
   const updateQuantity = useCallback(
-    (id: string, size: string | null, quantity: number) => {
+    (
+      id: string,
+      size: string | null,
+      customName: string | null,
+      quantity: number
+    ) => {
       setItems((prev) =>
         prev.flatMap((p) => {
-          if (lineKey(p.id, p.size) !== lineKey(id, size)) return [p];
+          if (lineKey(p.id, p.size, p.customName) !== lineKey(id, size, customName))
+            return [p];
           // Dropping to 0 removes the line.
           return quantity <= 0 ? [] : [{ ...p, quantity }];
         })

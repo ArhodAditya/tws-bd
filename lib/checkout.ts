@@ -63,11 +63,23 @@ export function buildOrderMessage(
   subtotal: number,
   shipping: number
 ): string {
-  const itemLines = items.map((item) => {
+  const itemLines = items.flatMap((item) => {
     const sizePart = item.size ? ` (Size ${item.size})` : "";
-    return `• ${item.quantity}x ${item.name}${sizePart} — ${
-      item.price * item.quantity
-    } BDT`;
+    const lines = [
+      `• ${item.quantity}x ${item.name}${sizePart} — ${
+        item.price * item.quantity
+      } BDT`,
+    ];
+    // When the buyer requested custom fonts, append an indented line beneath the
+    // item so the seller sees exactly what name/number to print. The whole
+    // message is later run through encodeURIComponent in buildWhatsappOrderLink,
+    // which turns these newlines into %0A and preserves the indent, so the
+    // wa.me deep link stays intact on mobile.
+    const customName = item.customName?.trim();
+    if (customName) {
+      lines.push(`    ↳ Custom Fonts: ${customName}`);
+    }
+    return lines;
   });
 
   const total = subtotal + shipping;

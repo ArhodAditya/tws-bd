@@ -199,12 +199,18 @@ export default function ProductDetail({
   const { addItem } = useCart();
 
   const handleAddToCart = () => {
+    // Jerseys carry an optional custom name/number; when present it adds the
+    // flat font fee to the per-unit price and travels with the line so it
+    // survives into the cart and the WhatsApp checkout message.
+    const trimmedCustom = isJersey ? customName.trim() : "";
+    const hasCustomName = trimmedCustom.length > 0;
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price ?? 0,
+      price: (product.price ?? 0) + (hasCustomName ? CUSTOM_FONT_FEE : 0),
       size,
       image: product.images?.[0] ?? null,
+      customName: hasCustomName ? trimmedCustom : null,
     });
     setJustAdded(true);
     if (addedTimer.current) window.clearTimeout(addedTimer.current);

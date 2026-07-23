@@ -242,7 +242,7 @@ export default function CartDrawer() {
               <ul className="space-y-3">
                 {items.map((item) => (
                   <li
-                    key={`${item.id}__${item.size ?? ""}`}
+                    key={`${item.id}__${item.size ?? ""}__${item.customName ?? ""}`}
                     className="flex gap-3 rounded-xl border border-gray-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]"
                   >
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-midnight-950 dark:border-white/10">
@@ -265,6 +265,11 @@ export default function CartDrawer() {
                           Size: {item.size}
                         </p>
                       ) : null}
+                      {item.customName ? (
+                        <p className="truncate text-xs text-gold-700 dark:text-gold-300">
+                          Fonts: {item.customName}
+                        </p>
+                      ) : null}
                       <p className="mt-0.5 text-sm font-bold text-gold-700 dark:text-gold-300">
                         {formatPrice(item.price * item.quantity)}
                       </p>
@@ -272,7 +277,9 @@ export default function CartDrawer() {
                     <div className="flex flex-col items-end justify-between">
                       <button
                         type="button"
-                        onClick={() => removeItem(item.id, item.size)}
+                        onClick={() =>
+                          removeItem(item.id, item.size, item.customName)
+                        }
                         aria-label={`Remove ${item.name}`}
                         className="text-slate-400 transition hover:text-red-500"
                       >
@@ -286,6 +293,7 @@ export default function CartDrawer() {
                             updateQuantity(
                               item.id,
                               item.size,
+                              item.customName,
                               item.quantity - 1
                             )
                           }
@@ -303,6 +311,7 @@ export default function CartDrawer() {
                             updateQuantity(
                               item.id,
                               item.size,
+                              item.customName,
                               item.quantity + 1
                             )
                           }

@@ -5,32 +5,33 @@ import type { Database } from "@/utils/supabase/database.types";
 
 export type Product = Database["public"]["Tables"]["products"]["Row"];
 
-export type ShopCategory = "jersey" | "turf" | "football" | "fashion";
+// Storefront taxonomy. `kits` carries the jersey-specific behaviour (size guide
+// + custom-font upsell), so any code that keyed off the old "jersey" category
+// now keys off "kits". NOTE: this is distinct from `size_pattern` below, which
+// keeps its own "jersey"/"fashion"/"custom" chart keys.
+export type ShopCategory = "kits" | "streetwear" | "accessories";
 
 export const SHOP_CATEGORIES: ShopCategory[] = [
-  "jersey",
-  "turf",
-  "football",
-  "fashion",
+  "kits",
+  "streetwear",
+  "accessories",
 ];
 
 // Storefront filter tabs. `all` is a UI-only pseudo-category.
 export const CATEGORY_FILTERS = [
   { value: "all", label: "All" },
-  { value: "jersey", label: "Jerseys" },
-  { value: "fashion", label: "Fashion" },
-  { value: "turf", label: "Turfs" },
-  { value: "football", label: "Equipment" },
+  { value: "kits", label: "Kits" },
+  { value: "streetwear", label: "Streetwear" },
+  { value: "accessories", label: "Accessories" },
 ] as const;
 
 export type CategoryFilter = (typeof CATEGORY_FILTERS)[number]["value"];
 
 // Singular label shown on cards / badges.
 export const CATEGORY_LABEL: Record<ShopCategory, string> = {
-  jersey: "Jersey",
-  turf: "Turf",
-  football: "Equipment",
-  fashion: "Fashion",
+  kits: "Kits",
+  streetwear: "Streetwear",
+  accessories: "Accessories",
 };
 
 // --- Sizing blueprints ------------------------------------------------------
@@ -65,7 +66,7 @@ export function resolveSizePattern(
   if (stored === "jersey" || stored === "fashion" || stored === "custom") {
     return stored;
   }
-  return product.category === "fashion" ? "fashion" : "jersey";
+  return product.category === "streetwear" ? "fashion" : "jersey";
 }
 
 // Defensive parse of the `custom_size_chart` jsonb column — a malformed row

@@ -30,9 +30,11 @@ export default function ShopBrowser({ products }: { products: Product[] }) {
 
   return (
     <>
-      {/* Filter rail — scrolls horizontally on mobile rather than wrapping into
-          a tall stack that pushes the product shelf below the fold. */}
-      <div className="no-scrollbar -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+      {/* Sticky category bar — stays pinned just under the navbar as the grid
+          scrolls. The rail still scrolls horizontally on mobile rather than
+          wrapping into a tall stack that pushes the shelf below the fold. */}
+      <div className="sticky top-16 z-30 -mx-4 mb-4 border-b border-white/5 bg-midnight-950/70 px-4 py-3 backdrop-blur-md sm:top-20 sm:mx-0 sm:rounded-2xl sm:border sm:border-white/10 sm:px-3">
+      <div className="no-scrollbar flex snap-x gap-2.5 overflow-x-auto sm:flex-wrap">
         {CATEGORY_FILTERS.map((tab) => {
           const active = filter === tab.value;
           return (
@@ -69,6 +71,7 @@ export default function ShopBrowser({ products }: { products: Product[] }) {
           );
         })}
       </div>
+      </div>
 
       {visible.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-white/10 bg-midnight-900/40 px-6 py-16 text-center backdrop-blur-md">
@@ -85,10 +88,13 @@ export default function ShopBrowser({ products }: { products: Product[] }) {
               <motion.div
                 key={product.id}
                 layout
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.94 }}
-                transition={SPRING}
+                // New items stagger in with a subtle upward spring; the old set
+                // scales down and fades out. Stagger delay is capped so a large
+                // grid doesn't trail on for too long, and exit stays snappy.
+                initial={{ opacity: 0, y: 24, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: SPRING }}
+                transition={{ ...SPRING, delay: Math.min(index, 7) * 0.04 }}
                 // min-w-0 lets the grid/flex track actually constrain the card
                 // instead of being widened by its image's intrinsic size.
                 className="flex min-w-0 shrink-0 md:w-full md:shrink"

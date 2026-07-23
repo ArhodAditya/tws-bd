@@ -30,7 +30,7 @@ export default function NewProductForm() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState<ShopCategory>("jersey");
+  const [category, setCategory] = useState<ShopCategory>("kits");
   const [sizePattern, setSizePattern] = useState<SizePattern>("jersey");
   const [customRows, setCustomRows] = useState<SizeChartRow[]>([]);
   const [images, setImages] = useState<string[]>([]);
@@ -38,6 +38,7 @@ export default function NewProductForm() {
   const [badgeText, setBadgeText] = useState("");
   const [inStock, setInStock] = useState(true);
   const [isActive, setIsActive] = useState(true);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,10 @@ export default function NewProductForm() {
     }
   };
 
-  // Tagging a product as Fashion implies the winter-drop chart.
+  // Tagging a product as Streetwear implies the winter-drop (fashion) chart.
   const handleCategoryChange = (next: ShopCategory) => {
     setCategory(next);
-    if (next === "fashion") handlePatternChange("fashion");
+    if (next === "streetwear") handlePatternChange("fashion");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -100,6 +101,7 @@ export default function NewProductForm() {
       badge_text: badgeText.trim() || null,
       in_stock: inStock,
       is_active: isActive,
+      is_featured: isFeatured,
     });
 
     if (insertError) {
@@ -277,6 +279,22 @@ export default function NewProductForm() {
           Publish to Storefront (Active)
           <span className="mt-0.5 block text-xs font-normal text-zinc-500">
             Leave unchecked to create a hidden draft customers can&rsquo;t see.
+          </span>
+        </span>
+      </label>
+
+      {/* Feature on homepage — surfaces this product in the Featured section. */}
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={isFeatured}
+          onChange={(e) => setIsFeatured(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-zinc-700 text-gold-500 accent-gold-500 focus:ring-gold-500"
+        />
+        <span className="text-sm font-semibold text-white">
+          Feature on Homepage
+          <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+            Highlights this product in the Featured section on the home page.
           </span>
         </span>
       </label>

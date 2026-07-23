@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Dumbbell, Gem, Shirt, ShoppingBag, Volleyball } from "lucide-react";
+import { Gem, Shirt, ShoppingBag, Volleyball } from "lucide-react";
 import { MagneticTilt } from "@/components/motion/primitives";
 import {
   CATEGORY_LABEL,
@@ -13,10 +13,9 @@ import {
 
 // Per-category accent icon, reused for the image fallback.
 const CATEGORY_ICON: Record<ShopCategory, typeof Shirt> = {
-  jersey: Shirt,
-  turf: Dumbbell,
-  football: Volleyball,
-  fashion: Gem,
+  kits: Shirt,
+  streetwear: Gem,
+  accessories: Volleyball,
 };
 
 function ProductImage({

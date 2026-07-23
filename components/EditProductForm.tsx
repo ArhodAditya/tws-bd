@@ -48,6 +48,7 @@ export default function EditProductForm({ product }: { product: Product }) {
   const [badgeText, setBadgeText] = useState(product.badge_text ?? "");
   const [inStock, setInStock] = useState(product.in_stock);
   const [isActive, setIsActive] = useState(product.is_active);
+  const [isFeatured, setIsFeatured] = useState(product.is_featured);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,10 +64,10 @@ export default function EditProductForm({ product }: { product: Product }) {
     }
   };
 
-  // Tagging a product as Fashion implies the winter-drop chart.
+  // Tagging a product as Streetwear implies the winter-drop (fashion) chart.
   const handleCategoryChange = (next: ShopCategory) => {
     setCategory(next);
-    if (next === "fashion") handlePatternChange("fashion");
+    if (next === "streetwear") handlePatternChange("fashion");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -112,6 +113,7 @@ export default function EditProductForm({ product }: { product: Product }) {
         badge_text: badgeText.trim() || null,
         in_stock: inStock,
         is_active: isActive,
+        is_featured: isFeatured,
       })
       .eq("id", product.id);
 
@@ -290,6 +292,22 @@ export default function EditProductForm({ product }: { product: Product }) {
           Publish to Storefront (Active)
           <span className="mt-0.5 block text-xs font-normal text-zinc-500">
             Uncheck to hide this product from the public storefront.
+          </span>
+        </span>
+      </label>
+
+      {/* Feature on homepage — surfaces this product in the Featured section. */}
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={isFeatured}
+          onChange={(e) => setIsFeatured(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-zinc-700 text-gold-500 accent-gold-500 focus:ring-gold-500"
+        />
+        <span className="text-sm font-semibold text-white">
+          Feature on Homepage
+          <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+            Highlights this product in the Featured section on the home page.
           </span>
         </span>
       </label>

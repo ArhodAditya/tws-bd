@@ -335,6 +335,7 @@ export type Database = {
           images: string[];
           in_stock: boolean;
           is_active: boolean;
+          is_featured: boolean;
           name: string;
           price: number;
           size_pattern: string;
@@ -350,6 +351,7 @@ export type Database = {
           images?: string[];
           in_stock?: boolean;
           is_active?: boolean;
+          is_featured?: boolean;
           name: string;
           price?: number;
           size_pattern?: string;
@@ -365,6 +367,7 @@ export type Database = {
           images?: string[];
           in_stock?: boolean;
           is_active?: boolean;
+          is_featured?: boolean;
           name?: string;
           price?: number;
           size_pattern?: string;

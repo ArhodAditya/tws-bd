@@ -89,9 +89,11 @@ export default async function ShopPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/80 to-slate-950 dark:from-midnight-950/60 dark:via-midnight-950/90 dark:to-midnight-950" />
       </div>
 
-      <div className="relative z-10 min-h-screen overflow-hidden text-white">
+      {/* No `overflow-hidden` here: it would clip the sticky category bar inside
+          ShopBrowser. The ambient glow is clipped by its own layer instead. */}
+      <div className="relative z-10 min-h-screen text-white">
         {/* Ambient gold glow, matching the brand surfaces */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-28 right-1/4 h-80 w-80 rounded-full bg-gold-500/10 blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_-10%,rgba(212,175,55,0.1),transparent_55%)]" />
         </div>

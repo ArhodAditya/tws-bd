@@ -8,7 +8,6 @@ import {
   Check,
   ChevronDown,
   Droplets,
-  Dumbbell,
   Gem,
   Info,
   RotateCcw,
@@ -37,10 +36,9 @@ import SizeGuideModal from "@/components/SizeGuideModal";
 
 // Per-category accent icon, reused for the image fallback.
 const CATEGORY_ICON: Record<ShopCategory, typeof Shirt> = {
-  jersey: Shirt,
-  turf: Dumbbell,
-  football: Volleyball,
-  fashion: Gem,
+  kits: Shirt,
+  streetwear: Gem,
+  accessories: Volleyball,
 };
 
 // Inline WhatsApp glyph (lucide has no brand icons).
@@ -173,7 +171,9 @@ export default function ProductDetail({
   whatsappNumber: string;
 }) {
   const hasSizes = product.sizes && product.sizes.length > 0;
-  const isJersey = product.category === "jersey";
+  // "kits" is the rebranded jersey category — it still drives the jersey size
+  // guide and the custom name/number font upsell.
+  const isJersey = product.category === "kits";
   // Which size chart this product renders: jersey (standard kit), fashion
   // (winter-drop hoodie) or custom (admin-typed rows). The jersey chart only
   // makes sense on actual jerseys — turf/football rows keep the default

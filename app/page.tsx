@@ -5,6 +5,7 @@ import { MOCK_ARTICLES, type ArticleWithAuthor } from "@/lib/articles";
 import { type Product } from "@/lib/shop";
 import { NewsCard } from "@/components/NewsCard";
 import HomeHero from "@/components/home/HomeHero";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
 import ProductCard from "@/components/shop/ProductCard";
 import { ScrollReveal } from "@/components/motion/primitives";
 
@@ -37,9 +38,11 @@ const HONOURS = [
 export default async function Home() {
   const supabase = await createClient();
 
-  // Latest news + the newest active drop, fetched in parallel. Both fall back
-  // gracefully so the page never renders half-empty.
-  const [newsRes, productRes] = await Promise.all([
+  // Latest news, the newest active drop, and the curated featured edit — all
+  // fetched in parallel. Each falls back gracefully so the page never renders
+  // half-empty. The featured query returns [] if the is_featured column doesn't
+  // exist yet (migration not applied), which simply hides the section.
+  const [newsRes, productRes, featuredRes] = await Promise.all([
     supabase
       .from("articles")
       .select("*, profiles(full_name, avatar_url)")
@@ -51,6 +54,13 @@ export default async function Home() {
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .eq("is_featured", true)
+      .order("created_at", { ascending: false })
+      .limit(8),
   ]);
 
   const latestNews: ArticleWithAuthor[] =
@@ -58,10 +68,14 @@ export default async function Home() {
       ? (newsRes.data as ArticleWithAuthor[])
       : MOCK_ARTICLES.slice(0, 3);
   const drop: Product[] = productRes.data ?? [];
+  const featured: Product[] = featuredRes.data ?? [];
 
   return (
     <>
       <HomeHero />
+
+      {/* ===== FEATURED — admin-curated highlights, first gear after the hero */}
+      <FeaturedProducts products={featured} />
 
       {/* ===== THE DROP — real merch, swipeable on mobile ==================== */}
       {drop.length > 0 ? (

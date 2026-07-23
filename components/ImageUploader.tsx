@@ -1,13 +1,8 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
-import { CldUploadWidget } from "next-cloudinary";
-import { ImagePlus, TriangleAlert, X } from "lucide-react";
-
-// Unsigned upload preset — configured per the task via the public env var. The
-// widget also needs NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME (read by next-cloudinary
-// internally).
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { ImagePlus, LoaderCircle, TriangleAlert, X } from "lucide-react";
+import { uploadImageToCloudinary } from "@/lib/cloudinary-upload";
 
 export default function ImageUploader({
   value,
@@ -21,15 +16,19 @@ export default function ImageUploader({
   // Products allow a gallery; the article form takes a single hero image.
   multiple?: boolean;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const addUrl = (url: string) => {
     if (!multiple) {
       onChange([url]); // single-image mode replaces.
       return;
     }
     // Functional update: when several uploads finish in the same tick their
-    // onSuccess callbacks all share one stale `value` closure, so `[...value,
-    // url]` would let them clobber each other. Reading `prev` applies each
-    // append on top of the latest state instead.
+    // callbacks all share one stale `value` closure, so `[...value, url]` would
+    // let them clobber each other. Reading `prev` applies each append on top of
+    // the latest state instead.
     onChange((prev) => (prev.includes(url) ? prev : [...prev, url]));
   };
 
@@ -37,48 +36,63 @@ export default function ImageUploader({
     onChange((prev) => prev.filter((_, i) => i !== index));
   };
 
-  if (!UPLOAD_PRESET) {
-    return (
-      <p className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-        <TriangleAlert className="h-4 w-4 shrink-0" />
-        Image uploads are unavailable — set{" "}
-        <code className="font-mono text-xs">
-          NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-        </code>{" "}
-        to enable them.
-      </p>
-    );
-  }
+  // Uploads are signed server-side (admin-only) and posted straight to
+  // Cloudinary — no unsigned preset, no third-party widget script.
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const chosen = multiple ? Array.from(files) : [files[0]!];
+      for (const file of chosen) {
+        const url = await uploadImageToCloudinary(file);
+        addUrl(url);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      // Reset so re-selecting the same file still fires onChange.
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="space-y-3">
-      <CldUploadWidget
-        uploadPreset={UPLOAD_PRESET}
-        options={{
-          multiple,
-          maxFiles: multiple ? 10 : 1,
-          sources: ["local", "url", "camera"],
-        }}
-        onSuccess={(result) => {
-          // `info` is typed string | object; narrow before reading secure_url.
-          const info = result?.info;
-          if (info && typeof info === "object" && "secure_url" in info) {
-            const url = (info as { secure_url?: string }).secure_url;
-            if (url) addUrl(url);
-          }
-        }}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="inline-flex items-center gap-2 rounded-full border border-gold-500/50 bg-gold-500/5 px-5 py-2.5 text-sm font-semibold text-gold-700 transition-all duration-300 hover:bg-gold-500/15 hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.9)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {({ open }) => (
-          <button
-            type="button"
-            onClick={() => open()}
-            className="inline-flex items-center gap-2 rounded-full border border-gold-500/50 bg-gold-500/5 px-5 py-2.5 text-sm font-semibold text-gold-700 transition-all duration-300 hover:bg-gold-500/15 hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.9)]"
-          >
+        {uploading ? (
+          <>
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            Uploading…
+          </>
+        ) : (
+          <>
             <ImagePlus className="h-4 w-4" />
             {value.length > 0 && !multiple ? "Replace Image" : "Upload Image"}
-          </button>
+          </>
         )}
-      </CldUploadWidget>
+      </button>
+
+      {error ? (
+        <p className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          <TriangleAlert className="h-4 w-4 shrink-0" />
+          {error}
+        </p>
+      ) : null}
 
       {value.length > 0 ? (
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">

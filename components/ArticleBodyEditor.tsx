@@ -1,16 +1,12 @@
 "use client";
 
-import { useRef, type ComponentType } from "react";
-import { CldUploadWidget } from "next-cloudinary";
-import { Bold, ImagePlus, Palette, TriangleAlert, Type } from "lucide-react";
-
-// Same unsigned preset used by the cover-image uploader. next-cloudinary also
-// needs NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME (read internally).
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+import { useRef, useState, type ComponentType } from "react";
+import { Bold, ImagePlus, LoaderCircle, Palette, TriangleAlert, Type } from "lucide-react";
+import { uploadImageToCloudinary } from "@/lib/cloudinary-upload";
 
 // The three style shortcuts surfaced in the toolbar. Each wraps the current
 // selection (or a "Text" placeholder at the caret) in Markdown / inline HTML —
-// the article page compiles the HTML via rehype-raw.
+// the article page compiles the HTML via rehype-raw (then sanitizes it).
 const STYLE_ACTIONS: {
   label: string;
   icon: ComponentType<{ className?: string }>;
@@ -75,6 +71,9 @@ export default function ArticleBodyEditor({
   labelClass: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Wrap the live selection in the given markers without disturbing the rest
   // of the text. With a collapsed caret a "Text" placeholder is injected and
@@ -141,41 +140,60 @@ export default function ArticleBodyEditor({
     });
   };
 
+  // Signed, admin-only upload posted straight to Cloudinary (no widget script).
+  const handleFile = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      insertImageMarkdown(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files)}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label htmlFor="content" className={labelClass}>
           Content <span className="font-normal text-zinc-500">(Markdown)</span>
         </label>
 
-        {UPLOAD_PRESET ? (
-          <CldUploadWidget
-            uploadPreset={UPLOAD_PRESET}
-            options={{ multiple: false, sources: ["local", "url", "camera"] }}
-            onSuccess={(result) => {
-              const info = result?.info;
-              if (info && typeof info === "object" && "secure_url" in info) {
-                const url = (info as { secure_url?: string }).secure_url;
-                if (url) insertImageMarkdown(url);
-              }
-            }}
-          >
-            {({ open }) => (
-              <button
-                type="button"
-                onClick={() => open()}
-                className="inline-flex items-center gap-2 rounded-full border border-gold-500/50 bg-gold-500/10 px-4 py-2 text-sm font-semibold text-gold-300 transition-all duration-300 ease-out hover:bg-gold-500/20 hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.9)] active:scale-[0.98]"
-              >
-                <ImagePlus className="h-4 w-4" />
-                🖼️ Insert Image into Article
-              </button>
-            )}
-          </CldUploadWidget>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-2 rounded-full border border-gold-500/50 bg-gold-500/10 px-4 py-2 text-sm font-semibold text-gold-300 transition-all duration-300 ease-out hover:bg-gold-500/20 hover:shadow-[0_0_22px_-10px_rgba(212,175,55,0.9)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {uploading ? (
+            <>
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              Uploading…
+            </>
+          ) : (
+            <>
+              <ImagePlus className="h-4 w-4" />
+              🖼️ Insert Image into Article
+            </>
+          )}
+        </button>
       </div>
 
       {/* Style shortcuts — inject Markdown / inline-HTML wrappers around the
-          live selection (rendered on the site through rehype-raw). */}
+          live selection (rendered on the site through rehype-raw + sanitize). */}
       <div className="inline-flex items-center gap-1 rounded-xl border border-zinc-800/50 bg-zinc-900/40 p-1 backdrop-blur-md">
         {STYLE_ACTIONS.map((action) => (
           <ToolbarButton
@@ -198,17 +216,15 @@ export default function ArticleBodyEditor({
         className={`${inputClass} resize-y leading-relaxed`}
       />
 
-      {UPLOAD_PRESET ? (
+      {error ? (
+        <p className="flex items-center gap-2 text-xs text-red-400">
+          <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+          {error}
+        </p>
+      ) : (
         <p className="text-xs text-zinc-500">
           Uploaded images are inserted as Markdown at your cursor and render
           inline in the published article.
-        </p>
-      ) : (
-        <p className="flex items-center gap-2 text-xs text-amber-400">
-          <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-          Inline image upload is unavailable — set{" "}
-          <code className="font-mono">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code>{" "}
-          to enable it. You can still paste Markdown image syntax manually.
         </p>
       )}
     </div>

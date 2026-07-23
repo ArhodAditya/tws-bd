@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { fetchAndUpsertFixtures } from "@/lib/sync/fixtures";
+import { constantTimeEqual } from "@/lib/security";
 
 // Uses the Supabase service role key, so it must run on the Node.js runtime.
 export const runtime = "nodejs";
@@ -13,7 +14,11 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (
+    !cronSecret ||
+    !authHeader ||
+    !constantTimeEqual(authHeader, `Bearer ${cronSecret}`)
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { constantTimeEqual } from "@/lib/security";
 import type { TablesInsert } from "@/utils/supabase/database.types";
 
 // Uses the Supabase service role key, so it must run on the Node.js runtime.
@@ -52,7 +53,11 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (
+    !cronSecret ||
+    !authHeader ||
+    !constantTimeEqual(authHeader, `Bearer ${cronSecret}`)
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

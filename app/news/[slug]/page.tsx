@@ -6,7 +6,9 @@ import { ArrowLeft, Calendar, Newspaper, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import {
   MOCK_ARTICLES,
   type ArticleWithAuthor,
@@ -19,6 +21,19 @@ import { FacebookIcon, XIcon } from "@/components/BrandIcons";
 import JsonLd from "@/components/JsonLd";
 
 type ArticleParams = { slug: string };
+
+// Sanitize schema for the raw HTML that rehype-raw parses out of admin article
+// Markdown. Keeps the default (safe) tag + URL-protocol allowlist — which drops
+// <script>, event-handler attributes and javascript: URLs — but re-permits
+// `className` and `style` so the intentional inline-styled accent spans still
+// render. rehype-sanitize runs AFTER rehype-raw so it scrubs the parsed HTML.
+const articleSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style"],
+  },
+};
 
 // Fetch a single article by slug, falling back to sample content. Wrapped in
 // React's cache() so generateMetadata and the page share one query per request.
@@ -93,15 +108,7 @@ export default async function ArticlePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  let isAdmin = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    isAdmin = profile?.role === "admin";
-  }
+  const isAdmin = user ? await isCurrentUserAdmin(supabase) : false;
   const canEdit =
     isAdmin && !MOCK_ARTICLES.some((mock) => mock.id === article.id);
 
@@ -224,7 +231,7 @@ export default async function ArticlePage({
                 instead of being collapsed into a space by standard Markdown. */}
             <ReactMarkdown
               remarkPlugins={[remarkBreaks]}
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={[rehypeRaw, [rehypeSanitize, articleSchema]]}
             >
               {content}
             </ReactMarkdown>

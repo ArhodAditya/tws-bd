@@ -2,7 +2,16 @@
 // shipping rates, and the WhatsApp order-message builder.
 
 import type { CartItem } from "@/context/CartContext";
-import { FALLBACK_WHATSAPP_NUMBER } from "@/lib/shop";
+import { FALLBACK_WHATSAPP_NUMBER, UCL_PATCH_FEE, formatPrice } from "@/lib/shop";
+
+// A cart line's money total: the per-unit price (which already folds in the
+// custom-font fee when set) plus the UCL patch fee, times quantity. Single
+// source of truth so the cart subtotal, the drawer line, and the WhatsApp
+// receipt can never drift apart.
+export function cartLineTotal(item: CartItem): number {
+  const unitPrice = item.price + (item.uclPatch ? UCL_PATCH_FEE : 0);
+  return unitPrice * item.quantity;
+}
 
 // All 64 districts of Bangladesh, alphabetical. "Chattogram" must be spelled
 // exactly like this for the shipping rule below to match.
@@ -66,18 +75,19 @@ export function buildOrderMessage(
   const itemLines = items.flatMap((item) => {
     const sizePart = item.size ? ` (Size ${item.size})` : "";
     const lines = [
-      `• ${item.quantity}x ${item.name}${sizePart} — ${
-        item.price * item.quantity
-      } BDT`,
+      `• ${item.quantity}x ${item.name}${sizePart} — ${cartLineTotal(item)} BDT`,
     ];
-    // When the buyer requested custom fonts, append an indented line beneath the
-    // item so the seller sees exactly what name/number to print. The whole
-    // message is later run through encodeURIComponent in buildWhatsappOrderLink,
-    // which turns these newlines into %0A and preserves the indent, so the
-    // wa.me deep link stays intact on mobile.
+    // Append an indented note beneath the item for each selected add-on so the
+    // seller sees exactly what to print/attach. The whole message is later run
+    // through encodeURIComponent in buildWhatsappOrderLink, which turns these
+    // newlines into %0A and preserves the indent, so the wa.me deep link stays
+    // intact on mobile.
     const customName = item.customName?.trim();
     if (customName) {
       lines.push(`    ↳ Custom Fonts: ${customName}`);
+    }
+    if (item.uclPatch) {
+      lines.push(`    ↳ Add-ons: UCL Patch (+${formatPrice(UCL_PATCH_FEE)})`);
     }
     return lines;
   });

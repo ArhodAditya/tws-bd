@@ -39,6 +39,7 @@ export default function NewProductForm() {
   const [inStock, setInStock] = useState(true);
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [hasUclPatch, setHasUclPatch] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +103,7 @@ export default function NewProductForm() {
       in_stock: inStock,
       is_active: isActive,
       is_featured: isFeatured,
+      has_ucl_patch: hasUclPatch,
     });
 
     if (insertError) {
@@ -295,6 +297,23 @@ export default function NewProductForm() {
           Feature on Homepage
           <span className="mt-0.5 block text-xs font-normal text-zinc-500">
             Highlights this product in the Featured section on the home page.
+          </span>
+        </span>
+      </label>
+
+      {/* UCL patch upsell — offers the +৳200 Champions League patch add-on. */}
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={hasUclPatch}
+          onChange={(e) => setHasUclPatch(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-zinc-700 text-gold-500 accent-gold-500 focus:ring-gold-500"
+        />
+        <span className="text-sm font-semibold text-white">
+          Enable UCL Patch Option (+৳200)
+          <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+            Lets customers add the Champions League sleeve patch on the product
+            page.
           </span>
         </span>
       </label>

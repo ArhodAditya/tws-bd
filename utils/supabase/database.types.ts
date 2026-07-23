@@ -336,6 +336,7 @@ export type Database = {
           in_stock: boolean;
           is_active: boolean;
           is_featured: boolean;
+          has_ucl_patch: boolean;
           name: string;
           price: number;
           size_pattern: string;
@@ -352,6 +353,7 @@ export type Database = {
           in_stock?: boolean;
           is_active?: boolean;
           is_featured?: boolean;
+          has_ucl_patch?: boolean;
           name: string;
           price?: number;
           size_pattern?: string;
@@ -368,6 +370,7 @@ export type Database = {
           in_stock?: boolean;
           is_active?: boolean;
           is_featured?: boolean;
+          has_ucl_patch?: boolean;
           name?: string;
           price?: number;
           size_pattern?: string;

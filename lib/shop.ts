@@ -122,6 +122,11 @@ export const FALLBACK_WHATSAPP_NUMBER = "880000000000";
 // Flat surcharge (BDT) for optional custom name/number printing on a jersey.
 export const CUSTOM_FONT_FEE = 250;
 
+// Flat surcharge (BDT) for the optional Champions League (UCL) sleeve patch
+// upsell. Applied per unit, like the custom-font fee. Only offered on products
+// an admin has flagged with `has_ucl_patch`.
+export const UCL_PATCH_FEE = 200;
+
 // Build a wa.me deep link with a pre-filled order message. `whatsappNumber`
 // comes from NEXT_PUBLIC_WHATSAPP_NUMBER; only digits are kept (wa.me needs an
 // international number with no +, spaces or dashes). When `customName` is set
@@ -131,7 +136,8 @@ export function whatsappOrderUrl(
   product: Pick<Product, "name" | "price">,
   size: string | null,
   whatsappNumber: string,
-  customName?: string | null
+  customName?: string | null,
+  uclPatch?: boolean
 ): string {
   const number = (whatsappNumber || FALLBACK_WHATSAPP_NUMBER).replace(
     /\D/g,
@@ -143,12 +149,21 @@ export function whatsappOrderUrl(
   // the %0A line break WhatsApp expects.
   const lines = [`Hala Madrid! I want to order the ${product.name}${sizePart}.`];
 
+  // Optional add-ons accumulate onto the base price; a Total line is appended
+  // whenever at least one is selected.
+  let addOns = 0;
   const trimmedName = customName?.trim();
   if (trimmedName) {
-    const total = (product.price ?? 0) + CUSTOM_FONT_FEE;
+    addOns += CUSTOM_FONT_FEE;
     lines.push(`*Custom Name:* ${trimmedName}`);
     lines.push(`*Custom Font:* +${formatPrice(CUSTOM_FONT_FEE)}`);
-    lines.push(`*Total:* ${formatPrice(total)}`);
+  }
+  if (uclPatch) {
+    addOns += UCL_PATCH_FEE;
+    lines.push(`*Add-ons:* UCL Patch +${formatPrice(UCL_PATCH_FEE)}`);
+  }
+  if (addOns > 0) {
+    lines.push(`*Total:* ${formatPrice((product.price ?? 0) + addOns)}`);
   }
 
   return `https://wa.me/${number}?text=${encodeURIComponent(lines.join("\n"))}`;

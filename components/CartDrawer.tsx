@@ -16,11 +16,12 @@ import {
 } from "lucide-react";
 import { SPRING } from "@/components/motion/primitives";
 import { useCart } from "@/context/CartContext";
-import { formatPrice } from "@/lib/shop";
+import { formatPrice, UCL_PATCH_FEE } from "@/lib/shop";
 import {
   BD_DISTRICTS,
   BKASH_NUMBER,
   buildWhatsappOrderLink,
+  cartLineTotal,
   getShipping,
   type PaymentMethod,
 } from "@/lib/checkout";
@@ -242,7 +243,7 @@ export default function CartDrawer() {
               <ul className="space-y-3">
                 {items.map((item) => (
                   <li
-                    key={`${item.id}__${item.size ?? ""}__${item.customName ?? ""}`}
+                    key={`${item.id}__${item.size ?? ""}__${item.customName ?? ""}__${item.uclPatch ? "ucl" : ""}`}
                     className="flex gap-3 rounded-xl border border-gray-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]"
                   >
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-midnight-950 dark:border-white/10">
@@ -270,15 +271,25 @@ export default function CartDrawer() {
                           Fonts: {item.customName}
                         </p>
                       ) : null}
+                      {item.uclPatch ? (
+                        <p className="truncate text-xs text-gold-700 dark:text-gold-300">
+                          UCL Patch (+{formatPrice(UCL_PATCH_FEE)})
+                        </p>
+                      ) : null}
                       <p className="mt-0.5 text-sm font-bold text-gold-700 dark:text-gold-300">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(cartLineTotal(item))}
                       </p>
                     </div>
                     <div className="flex flex-col items-end justify-between">
                       <button
                         type="button"
                         onClick={() =>
-                          removeItem(item.id, item.size, item.customName)
+                          removeItem(
+                            item.id,
+                            item.size,
+                            item.customName,
+                            item.uclPatch
+                          )
                         }
                         aria-label={`Remove ${item.name}`}
                         className="text-slate-400 transition hover:text-red-500"
@@ -294,6 +305,7 @@ export default function CartDrawer() {
                               item.id,
                               item.size,
                               item.customName,
+                              item.uclPatch,
                               item.quantity - 1
                             )
                           }
@@ -312,6 +324,7 @@ export default function CartDrawer() {
                               item.id,
                               item.size,
                               item.customName,
+                              item.uclPatch,
                               item.quantity + 1
                             )
                           }

@@ -15,6 +15,7 @@ import {
   Shirt,
   ShoppingBag,
   ShoppingCart,
+  Trophy,
   Truck,
   Volleyball,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import remarkBreaks from "remark-breaks";
 import {
   CATEGORY_LABEL,
   CUSTOM_FONT_FEE,
+  UCL_PATCH_FEE,
   formatPrice,
   parseCustomSizeChart,
   resolveSizePattern,
@@ -191,6 +193,9 @@ export default function ProductDetail({
     hasSizes ? product.sizes[0] : null
   );
   const [customName, setCustomName] = useState("");
+  // Optional +200 BDT Champions League patch, offered only when the admin has
+  // flagged the product with has_ucl_patch.
+  const [uclPatch, setUclPatch] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   // Playful post-tap feedback: the button briefly flips to "In the Bag!" with
   // a springy label swap before returning to its resting state.
@@ -211,6 +216,9 @@ export default function ProductDetail({
       size,
       image: product.images?.[0] ?? null,
       customName: hasCustomName ? trimmedCustom : null,
+      // Patch fee is not folded into price — it rides as a flag and is added by
+      // cartLineTotal, so the cart subtotal and receipt account for it per unit.
+      uclPatch,
     });
     setJustAdded(true);
     if (addedTimer.current) window.clearTimeout(addedTimer.current);
@@ -244,12 +252,15 @@ export default function ProductDetail({
     product,
     size,
     whatsappNumber,
-    isJersey ? customName : null
+    isJersey ? customName : null,
+    uclPatch
   );
   const hasCustom = isJersey && customName.trim().length > 0;
-  const displayTotal = hasCustom
-    ? (product.price ?? 0) + CUSTOM_FONT_FEE
-    : product.price ?? 0;
+  const basePrice = product.price ?? 0;
+  const displayTotal =
+    basePrice +
+    (hasCustom ? CUSTOM_FONT_FEE : 0) +
+    (uclPatch ? UCL_PATCH_FEE : 0);
 
   return (
     <div className="bg-zinc-950 text-white">
@@ -279,7 +290,7 @@ export default function ProductDetail({
 
           <p className="mt-3 font-display text-3xl font-extrabold text-gold-300">
             {formatPrice(displayTotal)}
-            {hasCustom ? (
+            {displayTotal > basePrice ? (
               <span className="ml-2 align-middle text-sm font-medium text-zinc-400 line-through">
                 {formatPrice(product.price)}
               </span>
@@ -366,6 +377,59 @@ export default function ProductDetail({
                 High-quality official fonts — +{formatPrice(CUSTOM_FONT_FEE)}{" "}
                 extra.
               </p>
+            </div>
+          ) : null}
+
+          {/* UCL patch upsell — only when the admin enabled it on this product */}
+          {product.has_ucl_patch ? (
+            <div className="mt-7">
+              <span className="text-sm font-bold uppercase tracking-wide text-white">
+                Match Detailing
+              </span>
+              <button
+                type="button"
+                onClick={() => setUclPatch((v) => !v)}
+                aria-pressed={uclPatch}
+                className={`mt-2 flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-300 ease-out active:scale-[0.99] ${
+                  uclPatch
+                    ? "border-gold-500 bg-gold-500/15 shadow-[0_0_26px_-10px_rgba(212,175,55,0.9)]"
+                    : "border-white/15 bg-white/5 hover:border-gold-500/50"
+                }`}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      uclPatch
+                        ? "border-gold-500 bg-gold-500 text-midnight-950"
+                        : "border-white/20 text-gold-300"
+                    }`}
+                  >
+                    <Trophy className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-white">
+                      Add UCL Patch
+                    </span>
+                    <span className="block truncate text-xs text-zinc-400">
+                      Official Champions League sleeve badge
+                    </span>
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2.5">
+                  <span className="text-sm font-bold text-gold-300">
+                    +{formatPrice(UCL_PATCH_FEE)}
+                  </span>
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border transition-colors ${
+                      uclPatch
+                        ? "border-gold-500 bg-gold-500 text-midnight-950"
+                        : "border-white/25"
+                    }`}
+                  >
+                    {uclPatch ? <Check className="h-3.5 w-3.5" /> : null}
+                  </span>
+                </span>
+              </button>
             </div>
           ) : null}
 

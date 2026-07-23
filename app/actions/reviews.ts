@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
+import { rateLimit } from "@/lib/rate-limit";
 import { MAX_DISPLAY_NAME_LENGTH, MAX_REVIEW_LENGTH } from "@/lib/fan-reviews";
 
 export type ActionResult = {
@@ -37,6 +38,15 @@ export async function submitFanReview(
   } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, message: "Log in to drop a review." };
+  }
+
+  // Throttle spam: at most 5 submissions per 10 minutes per user.
+  const rl = rateLimit(`fan-review:${user.id}`, 5, 10 * 60_000);
+  if (!rl.ok) {
+    return {
+      success: false,
+      message: `You're posting too fast — try again in ${rl.retryAfterSeconds}s.`,
+    };
   }
 
   // Optional custom name; blank falls back to the fan's profile name on display.

@@ -7,12 +7,24 @@
 // On any failure we return a 4xx/5xx and let the client <img> onError fall back
 // to a lettered chip.
 
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Throttle scraping/DDoS: 60 requests/min per client IP. Real pages load a
+  // small, edge-cached set of crests, so this only bites hammering.
+  const rl = rateLimit(`team-logo:${clientIp(request)}`, 60, 60_000);
+  if (!rl.ok) {
+    return new Response("Too Many Requests", {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfterSeconds) },
+    });
+  }
+
   const { id } = await params;
 
   // Only numeric team ids — avoids being used as an open proxy.

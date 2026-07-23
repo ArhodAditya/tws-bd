@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import NewProductForm from "@/components/NewProductForm";
 
 export const metadata: Metadata = {
@@ -22,13 +23,7 @@ export default async function NewProductPage() {
   }
 
   // Strict role gate: only admins may add products.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

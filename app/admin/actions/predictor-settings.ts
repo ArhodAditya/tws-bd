@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import type { PredictorSettingsResult } from "@/lib/predictor-settings";
 
 // NOTE: A "use server" module may only export async functions. Do NOT re-export
@@ -13,17 +14,7 @@ import type { PredictorSettingsResult } from "@/lib/predictor-settings";
 // enough — re-verify the caller is an admin here.
 async function isAdmin(): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  return profile?.role === "admin";
+  return isCurrentUserAdmin(supabase);
 }
 
 /**

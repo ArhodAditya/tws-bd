@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { MAX_DISPLAY_NAME_LENGTH, MAX_REVIEW_LENGTH } from "@/lib/fan-reviews";
 
 export type ActionResult = {
@@ -64,12 +65,7 @@ async function requireAdmin(): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, message: "You must be signed in." };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     return { success: false, message: "Admins only." };
   }
   return { success: true };

@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import { isSuperAdmin } from "@/lib/admin";
+import { isSuperAdmin, isCurrentUserAdmin } from "@/lib/admin";
 import SyncFootballButton from "@/components/SyncFootballButton";
 
 export const metadata: Metadata = {
@@ -34,13 +34,7 @@ export default async function AdminPage() {
   }
 
   // Strict role gate: only admins may reach the control panel.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

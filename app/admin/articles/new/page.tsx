@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import NewArticleForm from "@/components/NewArticleForm";
 
 export const metadata: Metadata = {
@@ -23,13 +24,7 @@ export default async function NewArticlePage() {
   }
 
   // Strict role gate: only admins may reach the publishing form.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

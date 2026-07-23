@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import {
   fetchAndUpsertFixtures,
   type SyncFixturesResult,
@@ -17,17 +18,7 @@ import {
 // enough — re-verify the caller is an admin here.
 async function isAdmin(): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  return profile?.role === "admin";
+  return isCurrentUserAdmin(supabase);
 }
 
 /**

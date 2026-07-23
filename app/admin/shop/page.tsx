@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Plus, ShoppingBag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import ProductInventoryList from "@/components/ProductInventoryList";
 import type { Product } from "@/lib/shop";
 
@@ -23,13 +24,7 @@ export default async function AdminShopPage() {
   }
 
   // Strict role gate: only admins may manage inventory.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

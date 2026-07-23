@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { getFixtureSides, formatKickoff, type Match } from "@/lib/fans";
 import { fetchPredictorSettings } from "@/lib/predictor-settings";
 import SyncFixturesButton from "@/components/SyncFixturesButton";
@@ -29,12 +30,7 @@ export default async function AdminFixturesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") redirect("/");
+  if (!(await isCurrentUserAdmin(supabase))) redirect("/");
 
   const { data: fixtures } = await supabase
     .from("matches")

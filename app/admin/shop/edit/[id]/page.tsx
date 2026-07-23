@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import EditProductForm from "@/components/EditProductForm";
 import type { Product } from "@/lib/shop";
 
@@ -28,13 +29,7 @@ export default async function EditProductPage({
   }
 
   // Strict role gate: only admins may edit products.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

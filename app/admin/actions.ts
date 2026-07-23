@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { isSuperAdmin } from "@/lib/admin";
+import { isSuperAdmin, isCurrentUserAdmin } from "@/lib/admin";
 
 export type SyncResult = {
   success: boolean;
@@ -27,12 +27,7 @@ async function requireAdmin(): Promise<ActionResult & { userId?: string }> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, message: "You must be signed in." };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     return { success: false, message: "Admins only." };
   }
   return { success: true, userId: user.id };
@@ -275,12 +270,7 @@ export async function syncFootballData(): Promise<SyncResult> {
     return { success: false, message: "You must be signed in." };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     return { success: false, message: "Admins only." };
   }
 

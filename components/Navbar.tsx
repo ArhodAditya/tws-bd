@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, ShieldCheck, ShoppingCart, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { useCart } from "@/context/CartContext";
 import { SITE_LOGO_SRC } from "@/lib/assets";
 import SocialLinks from "@/components/SocialLinks";
@@ -48,12 +49,8 @@ export default function Navbar() {
         return;
       }
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", sessionUser.id)
-        .single();
-      if (active) setIsAdmin(data?.role === "admin");
+      const admin = await isCurrentUserAdmin(supabase);
+      if (active) setIsAdmin(admin);
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {

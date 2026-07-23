@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Calendar, FileText, Newspaper, Pencil } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { CategoryBadge } from "@/components/NewsCard";
 import DeleteArticleButton from "@/components/DeleteArticleButton";
 import { formatArticleDate, type ArticleWithAuthor } from "@/lib/articles";
@@ -24,13 +25,7 @@ export default async function AdminArticlesPage() {
   }
 
   // Strict role gate: only admins may manage articles.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

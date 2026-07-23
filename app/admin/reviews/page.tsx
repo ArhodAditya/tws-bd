@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Megaphone } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { isCurrentUserAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/utils/supabase/admin";
 import ReviewModerationList from "@/components/ReviewModerationList";
 import AdminManualReviewForm from "@/components/AdminManualReviewForm";
@@ -25,13 +26,7 @@ export default async function AdminReviewsPage() {
   }
 
   // Strict role gate: only admins may moderate reviews.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
+  if (!(await isCurrentUserAdmin(supabase))) {
     redirect("/");
   }
 

@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
   return (
     <LegalPageShell
       title="Privacy Policy"
-      lastUpdated="June 2026"
+      lastUpdated="July 2026"
       intro="At The Whites Stories (TWS), we respect your privacy and are committed to protecting your personal information."
     >
       <LegalSection title="Information We Collect">
@@ -70,27 +70,25 @@ export default function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection title="Cookies">
-        <LegalParagraph>Our website may use cookies to:</LegalParagraph>
-        <LegalList
-          items={[
-            "Improve browsing experience",
-            "Remember cart items",
-            "Analyze website traffic",
-          ]}
-        />
         <LegalParagraph>
-          You can disable cookies through your browser settings.
+          We use only essential cookies — the ones that keep you signed in and
+          remember your cart. We do not use analytics, advertising, or any
+          third-party tracking cookies.
+        </LegalParagraph>
+        <LegalParagraph>
+          You can disable cookies through your browser settings, though signing
+          in and checking out may not work without the essential ones.
         </LegalParagraph>
       </LegalSection>
 
       <LegalSection title="Third-Party Services">
-        <LegalParagraph>Our website may use services such as:</LegalParagraph>
+        <LegalParagraph>
+          To fulfil your order we rely on a small number of service providers:
+        </LegalParagraph>
         <LegalList
           items={[
-            "Google Analytics",
-            "Meta Pixel",
-            "Payment gateways",
-            "Courier partners",
+            "Payment providers (bank / mobile financial services such as bKash)",
+            "Courier and delivery partners",
           ]}
         />
         <LegalParagraph>Each service has its own privacy policy.</LegalParagraph>

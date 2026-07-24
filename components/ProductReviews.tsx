@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { LoaderCircle, MessageSquare, Send, Star } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -82,23 +82,28 @@ export default function ProductReviews({ productId }: { productId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchReviews = useCallback(async (): Promise<ReviewWithAuthor[]> => {
+    const { data } = await supabase
+      .from("product_reviews")
+      .select("*, profiles(full_name, avatar_url)")
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false });
+    return (data as ReviewWithAuthor[] | null) ?? [];
+  }, [supabase, productId]);
+
   // Load the current user and this product's reviews on mount / product change.
   useEffect(() => {
     let active = true;
 
     const load = async () => {
-      const [{ data: auth }, { data }] = await Promise.all([
+      const [{ data: auth }, list] = await Promise.all([
         supabase.auth.getUser(),
-        supabase
-          .from("product_reviews")
-          .select("*, profiles(full_name, avatar_url)")
-          .eq("product_id", productId)
-          .order("created_at", { ascending: false }),
+        fetchReviews(),
       ]);
 
       if (!active) return;
       setUserId(auth.user?.id ?? null);
-      setReviews((data as ReviewWithAuthor[] | null) ?? []);
+      setReviews(list);
       setLoaded(true);
     };
 
@@ -106,12 +111,17 @@ export default function ProductReviews({ productId }: { productId: string }) {
     return () => {
       active = false;
     };
-  }, [supabase, productId]);
+  }, [supabase, fetchReviews]);
 
   const average = averageRating(reviews);
-  const alreadyReviewed = userId
-    ? reviews.some((r) => r.user_id === userId)
-    : false;
+  // The DB enforces one review per (product_id, user_id), so at most one match.
+  const myReview = userId
+    ? (reviews.find((r) => r.user_id === userId) ?? null)
+    : null;
+  // The viewer's own review is lifted out of the list and shown on its own.
+  const otherReviews = myReview
+    ? reviews.filter((r) => r.id !== myReview.id)
+    : reviews;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -136,7 +146,17 @@ export default function ProductReviews({ productId }: { productId: string }) {
       .single();
 
     if (insertError) {
-      setError(insertError.message);
+      // 23505 = unique_violation on product_reviews_product_id_user_id_key. The
+      // UI already hides the form once you've reviewed, so this only fires when
+      // that state was stale (a second tab, or a review posted elsewhere).
+      // Surface a human sentence instead of the raw constraint error and pull
+      // the existing review in, which swaps the form for it.
+      if (insertError.code === "23505") {
+        setError("You've already reviewed this product.");
+        setReviews(await fetchReviews());
+      } else {
+        setError(insertError.message);
+      }
       setSubmitting(false);
       return;
     }
@@ -168,7 +188,33 @@ export default function ProductReviews({ productId }: { productId: string }) {
         ) : null}
       </div>
 
-      {/* Review list */}
+      {/* The viewer's own review, pulled to the top in gold so it reads first
+          (and so it isn't repeated in the list below). */}
+      {loaded && myReview ? (
+        <div className="mt-4 rounded-xl border border-gold-500/40 bg-gold-500/[0.06] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="rounded-full bg-gold-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-midnight-950">
+              Your review
+            </span>
+            <span className="text-xs text-zinc-500">
+              {formatReviewDate(myReview.created_at)}
+            </span>
+          </div>
+          <div className="mt-2">
+            <StarRating value={myReview.rating} className="h-3.5 w-3.5" />
+          </div>
+          {myReview.comment ? (
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+              {myReview.comment}
+            </p>
+          ) : null}
+          <p className="mt-3 text-xs text-zinc-500">
+            One review per product — thanks for sharing your verdict.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Everyone else's reviews */}
       <div className="mt-4 space-y-4">
         {!loaded ? (
           <p className="flex items-center gap-2 text-sm text-zinc-400">
@@ -179,8 +225,8 @@ export default function ProductReviews({ productId }: { productId: string }) {
           <p className="text-sm text-zinc-400">
             No reviews yet — be the first Madridista to share your verdict.
           </p>
-        ) : (
-          reviews.map((review) => (
+        ) : otherReviews.length === 0 ? null : (
+          otherReviews.map((review) => (
             <div
               key={review.id}
               className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
@@ -206,8 +252,8 @@ export default function ProductReviews({ productId }: { productId: string }) {
         )}
       </div>
 
-      {/* Submit form (only once we know the auth state) */}
-      {loaded && userId && !alreadyReviewed ? (
+      {/* Submit form — only for a signed-in fan who hasn't reviewed yet. */}
+      {loaded && userId && !myReview ? (
         <form
           onSubmit={handleSubmit}
           className="mt-6 rounded-xl border border-gold-500/20 bg-gold-500/[0.04] p-4"
@@ -246,10 +292,6 @@ export default function ProductReviews({ productId }: { productId: string }) {
             </button>
           </div>
         </form>
-      ) : loaded && userId && alreadyReviewed ? (
-        <p className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
-          Thanks — you&apos;ve already reviewed this product.
-        </p>
       ) : loaded && !userId ? (
         <p className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
           Sign in to leave a star rating and review.

@@ -11,18 +11,26 @@ import {
   type ReactNode,
 } from "react";
 import { cartLineTotal } from "@/lib/checkout";
+import {
+  CUSTOM_FONT_FEE,
+  NO_FONT,
+  normalizeFontSelection,
+  type FontSelection,
+} from "@/lib/shop";
 
 export type CartItem = {
   id: string; // product id
   name: string;
-  price: number; // per-unit price, incl. the custom-font fee when customName is set
+  // Base per-unit price. Add-ons (font printing, UCL patch) are *not* folded in
+  // here — cartLineTotal applies them, so one helper owns the money math.
+  price: number;
   size: string | null;
   image: string | null;
-  // Free-text custom name/number the buyer typed for a jersey (e.g.
-  // "VINÍCIUS JR - 7"). null when no customisation was requested. Part of a
-  // line's identity, so the same jersey+size with different fonts stays a
-  // separate line instead of merging.
-  customName: string | null;
+  // Which name/number print the buyer chose for a jersey: none, a squad player
+  // from the product's roster, or their own name + number. Part of a line's
+  // identity, so the same jersey+size with different fonts stays a separate line
+  // instead of merging. Absent on lines that can't be printed.
+  fontSelection?: FontSelection;
   // Whether the buyer added the +200 BDT Champions League (UCL) patch. Also part
   // of a line's identity, so a patched and un-patched jersey stay separate lines.
   uclPatch: boolean;
@@ -36,19 +44,10 @@ type CartContextValue = {
   itemCount: number;
   subtotal: number;
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  removeItem: (
-    id: string,
-    size: string | null,
-    customName: string | null,
-    uclPatch: boolean
-  ) => void;
-  updateQuantity: (
-    id: string,
-    size: string | null,
-    customName: string | null,
-    uclPatch: boolean,
-    quantity: number
-  ) => void;
+  // Both take the line's key from cartLineKey(item) — the same string the list
+  // renders as its React key.
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, quantity: number) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
@@ -69,15 +68,53 @@ const ADD_MESSAGES = [
   "¡Vamos! White pride secured. ✨",
 ];
 
-// A cart line is unique per product + size + custom name + UCL patch, so the
+// A cart line is unique per product + size + font selection + UCL patch, so the
 // same jersey in two sizes — or with different fonts, or with vs without the
-// patch — stays a separate line.
-const lineKey = (
-  id: string,
-  size: string | null,
-  customName: string | null,
-  uclPatch: boolean
-) => `${id}__${size ?? ""}__${customName ?? ""}__${uclPatch ? "ucl" : ""}`;
+// patch — stays a separate line. Exported because callers identify a line by
+// this key when removing it or changing its quantity.
+export function cartLineKey(
+  item: Pick<CartItem, "id" | "size" | "fontSelection" | "uclPatch">
+): string {
+  const font = normalizeFontSelection(item.fontSelection);
+  const fontPart =
+    font.type === "none"
+      ? ""
+      : `${font.type}:${font.text ?? ""}:${font.number ?? ""}`;
+  return `${item.id}__${item.size ?? ""}__${fontPart}__${
+    item.uclPatch ? "ucl" : ""
+  }`;
+}
+
+// Carts saved before the font selector shipped stored a free-text `customName`
+// and folded the +250 fee into `price`. Map those onto the current shape so a
+// returning buyer's cart survives the upgrade — and isn't charged the fee twice
+// now that cartLineTotal adds it. Anything unrecognisable is dropped.
+function reviveCartItem(raw: unknown): CartItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Partial<CartItem> & { customName?: unknown };
+  if (typeof item.id !== "string" || typeof item.name !== "string") return null;
+  if (typeof item.price !== "number" || typeof item.quantity !== "number") {
+    return null;
+  }
+
+  const legacyName =
+    typeof item.customName === "string" ? item.customName.trim() : "";
+  const fontSelection = legacyName
+    ? normalizeFontSelection({ type: "custom", text: legacyName })
+    : normalizeFontSelection(item.fontSelection);
+
+  return {
+    id: item.id,
+    name: item.name,
+    // Unfold the legacy price so the fee isn't counted a second time.
+    price: legacyName ? item.price - CUSTOM_FONT_FEE : item.price,
+    size: typeof item.size === "string" ? item.size : null,
+    image: typeof item.image === "string" ? item.image : null,
+    fontSelection: fontSelection.type === "none" ? NO_FONT : fontSelection,
+    uclPatch: item.uclPatch === true,
+    quantity: Math.max(1, Math.floor(item.quantity)),
+  };
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -98,7 +135,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         const parsed = raw ? JSON.parse(raw) : null;
-        if (Array.isArray(parsed) && parsed.length > 0) setItems(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const revived = parsed.flatMap((entry) => {
+            const item = reviveCartItem(entry);
+            return item ? [item] : [];
+          });
+          if (revived.length > 0) setItems(revived);
+        }
       } catch {
         // Corrupt/unavailable storage — start with an empty cart.
       }
@@ -122,13 +165,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity">, quantity = 1) => {
       setItems((prev) => {
-        const key = lineKey(item.id, item.size, item.customName, item.uclPatch);
-        const existing = prev.find(
-          (p) => lineKey(p.id, p.size, p.customName, p.uclPatch) === key
-        );
+        const key = cartLineKey(item);
+        const existing = prev.find((p) => cartLineKey(p) === key);
         if (existing) {
           return prev.map((p) =>
-            lineKey(p.id, p.size, p.customName, p.uclPatch) === key
+            cartLineKey(p) === key
               ? { ...p, quantity: p.quantity + quantity }
               : p
           );
@@ -143,46 +184,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const removeItem = useCallback(
-    (
-      id: string,
-      size: string | null,
-      customName: string | null,
-      uclPatch: boolean
-    ) => {
-      setItems((prev) =>
-        prev.filter(
-          (p) =>
-            lineKey(p.id, p.size, p.customName, p.uclPatch) !==
-            lineKey(id, size, customName, uclPatch)
-        )
-      );
-    },
-    []
-  );
+  const removeItem = useCallback((key: string) => {
+    setItems((prev) => prev.filter((p) => cartLineKey(p) !== key));
+  }, []);
 
-  const updateQuantity = useCallback(
-    (
-      id: string,
-      size: string | null,
-      customName: string | null,
-      uclPatch: boolean,
-      quantity: number
-    ) => {
-      setItems((prev) =>
-        prev.flatMap((p) => {
-          if (
-            lineKey(p.id, p.size, p.customName, p.uclPatch) !==
-            lineKey(id, size, customName, uclPatch)
-          )
-            return [p];
-          // Dropping to 0 removes the line.
-          return quantity <= 0 ? [] : [{ ...p, quantity }];
-        })
-      );
-    },
-    []
-  );
+  const updateQuantity = useCallback((key: string, quantity: number) => {
+    setItems((prev) =>
+      prev.flatMap((p) => {
+        if (cartLineKey(p) !== key) return [p];
+        // Dropping to 0 removes the line.
+        return quantity <= 0 ? [] : [{ ...p, quantity }];
+      })
+    );
+  }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
   const openCart = useCallback(() => setIsOpen(true), []);
@@ -193,9 +207,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => items.reduce((sum, p) => sum + p.quantity, 0),
     [items]
   );
-  // Subtotal folds in every line's add-ons (custom-font fee lives in price; the
-  // UCL patch fee is added by cartLineTotal) so the grand total already covers
-  // "+200 BDT for every item with uclPatch === true".
+  // Subtotal folds in every line's add-ons — cartLineTotal adds the +250 font
+  // fee and the +200 UCL patch fee per unit — so the grand total is already
+  // complete before shipping.
   const subtotal = useMemo(
     () => items.reduce((sum, p) => sum + cartLineTotal(p), 0),
     [items]

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Droplets,
   Info,
+  Megaphone,
   RotateCcw,
   Ruler,
   ShoppingCart,
@@ -18,13 +19,19 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {
+  CUSTOM_FONT_ADVANCE,
   CUSTOM_FONT_FEE,
+  NO_FONT,
   UCL_PATCH_FEE,
   categoryLabel,
+  fontFee,
   formatPrice,
+  normalizeFontSelection,
   parseCustomSizeChart,
+  parsePlayerNames,
   resolveSizePattern,
   whatsappOrderUrl,
+  type FontType,
   type Product,
 } from "@/lib/shop";
 import { useCart } from "@/context/CartContext";
@@ -181,10 +188,21 @@ export default function ProductDetail({
     sizePattern === "fashion" ||
     (sizePattern === "custom" && customSizeRows.length > 0) ||
     (sizePattern === "jersey" && isJersey);
+  // Roster the admin curated for this kit; empty means the "Player Name" option
+  // simply isn't offered.
+  const playerNames = useMemo(
+    () => parsePlayerNames(product.available_player_names),
+    [product.available_player_names]
+  );
   const [size, setSize] = useState<string | null>(
     hasSizes ? product.sizes[0] : null
   );
-  const [customName, setCustomName] = useState("");
+  // Font upsell: none, a squad player off the roster, or the buyer's own
+  // name + number.
+  const [fontType, setFontType] = useState<FontType>("none");
+  const [playerName, setPlayerName] = useState(playerNames[0] ?? "");
+  const [customText, setCustomText] = useState("");
+  const [customNumber, setCustomNumber] = useState("");
   // Optional +200 BDT Champions League patch, offered only when the admin has
   // flagged the product with has_ucl_patch.
   const [uclPatch, setUclPatch] = useState(false);
@@ -195,21 +213,29 @@ export default function ProductDetail({
   const addedTimer = useRef<number | null>(null);
   const { addItem } = useCart();
 
+  // The buyer's font choice in canonical form. normalizeFontSelection collapses
+  // a half-filled form back to "none", so the +250 can't be charged for a print
+  // with nothing on it.
+  const fontSelection = useMemo(() => {
+    if (!isJersey || fontType === "none") return NO_FONT;
+    return normalizeFontSelection(
+      fontType === "player"
+        ? { type: "player", text: playerName }
+        : { type: "custom", text: customText, number: customNumber }
+    );
+  }, [isJersey, fontType, playerName, customText, customNumber]);
+
   const handleAddToCart = () => {
-    // Jerseys carry an optional custom name/number; when present it adds the
-    // flat font fee to the per-unit price and travels with the line so it
-    // survives into the cart and the WhatsApp checkout message.
-    const trimmedCustom = isJersey ? customName.trim() : "";
-    const hasCustomName = trimmedCustom.length > 0;
     addItem({
       id: product.id,
       name: product.name,
-      price: (product.price ?? 0) + (hasCustomName ? CUSTOM_FONT_FEE : 0),
+      // Base price only — the font fee and patch fee are not folded in here.
+      // They ride on the line and are applied by cartLineTotal, so the cart
+      // subtotal and the receipt account for them per unit.
+      price: product.price ?? 0,
       size,
       image: product.images?.[0] ?? null,
-      customName: hasCustomName ? trimmedCustom : null,
-      // Patch fee is not folded into price — it rides as a flag and is added by
-      // cartLineTotal, so the cart subtotal and receipt account for it per unit.
+      fontSelection,
       uclPatch,
     });
     setJustAdded(true);
@@ -244,15 +270,34 @@ export default function ProductDetail({
     product,
     size,
     whatsappNumber,
-    isJersey ? customName : null,
+    fontSelection,
     uclPatch
   );
-  const hasCustom = isJersey && customName.trim().length > 0;
   const basePrice = product.price ?? 0;
   const displayTotal =
-    basePrice +
-    (hasCustom ? CUSTOM_FONT_FEE : 0) +
-    (uclPatch ? UCL_PATCH_FEE : 0);
+    basePrice + fontFee(fontSelection) + (uclPatch ? UCL_PATCH_FEE : 0);
+
+  const announcement = product.special_announcement?.trim();
+
+  // Radio options for the font selector. "Player Name" only appears once the
+  // admin has actually listed a roster on this product.
+  const fontOptions: { value: FontType; label: string; hint: string }[] = [
+    { value: "none", label: "No Font", hint: "Plain kit" },
+    ...(playerNames.length > 0
+      ? [
+          {
+            value: "player" as const,
+            label: "Player Name",
+            hint: `+${formatPrice(CUSTOM_FONT_FEE)}`,
+          },
+        ]
+      : []),
+    {
+      value: "custom",
+      label: "Custom Name",
+      hint: `+${formatPrice(CUSTOM_FONT_FEE)}`,
+    },
+  ];
 
   return (
     <div className="bg-zinc-950 text-white">
@@ -288,6 +333,21 @@ export default function ProductDetail({
               </span>
             ) : null}
           </p>
+
+          {/* Special announcement — an admin-authored line (pre-order window,
+              restock date, drop notice) that has to be impossible to miss, so it
+              sits directly under the price as a highlighted banner. */}
+          {announcement ? (
+            <div
+              role="status"
+              className="mt-4 flex items-start gap-3 rounded-xl border border-gold-500/40 bg-gradient-to-r from-gold-500/15 to-gold-500/[0.04] px-4 py-3 shadow-[0_0_26px_-14px_rgba(212,175,55,0.9)]"
+            >
+              <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
+              <p className="text-sm font-semibold leading-relaxed text-gold-100">
+                {announcement}
+              </p>
+            </div>
+          ) : null}
 
           {/* Stock status */}
           <div className="mt-4">
@@ -344,30 +404,154 @@ export default function ProductDetail({
             </div>
           ) : null}
 
-          {/* Custom font upsell — jerseys only */}
+          {/* Font upsell — jerseys only. Three mutually exclusive choices, so a
+              radio group rather than a checkbox: plain, a squad player off the
+              admin's roster, or the buyer's own name and number. */}
           {isJersey ? (
             <div className="mt-7">
-              <label
-                htmlFor="custom-name"
-                className="text-sm font-bold uppercase tracking-wide text-white"
-              >
+              <span className="text-sm font-bold uppercase tracking-wide text-white">
                 Add Fonts{" "}
                 <span className="font-medium normal-case text-zinc-400">
                   (optional)
                 </span>
-              </label>
-              <input
-                id="custom-name"
-                type="text"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                maxLength={32}
-                placeholder="E.g., VINÍCIUS JR - 7"
-                className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30"
-              />
-              <p className="mt-1.5 text-xs text-zinc-400">
+              </span>
+
+              <div
+                role="radiogroup"
+                aria-label="Name and number printing"
+                className="mt-3 grid gap-2.5 sm:grid-cols-3"
+              >
+                {fontOptions.map((option) => {
+                  const active = fontType === option.value;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 py-3 transition-all duration-300 ease-out active:scale-[0.99] ${
+                        active
+                          ? "border-gold-500 bg-gold-500/15"
+                          : "border-white/15 bg-white/5 hover:border-gold-500/50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="font-type"
+                        value={option.value}
+                        checked={active}
+                        onChange={() => setFontType(option.value)}
+                        className="sr-only"
+                      />
+                      <span
+                        className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                          active ? "border-gold-500" : "border-white/30"
+                        }`}
+                      >
+                        {active ? (
+                          <span className="h-2 w-2 rounded-full bg-gold-400" />
+                        ) : null}
+                      </span>
+                      <span className="min-w-0">
+                        <span
+                          className={`block text-sm font-bold ${
+                            active ? "text-gold-200" : "text-zinc-200"
+                          }`}
+                        >
+                          {option.label}
+                        </span>
+                        <span className="block truncate text-xs text-zinc-400">
+                          {option.hint}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {/* Squad roster — the admin's list, offered verbatim */}
+              {fontType === "player" ? (
+                <div className="mt-3">
+                  <label
+                    htmlFor="player-name"
+                    className="text-xs font-semibold text-zinc-300"
+                  >
+                    Choose a player
+                  </label>
+                  <div className="relative mt-1.5">
+                    <select
+                      id="player-name"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-white/15 bg-white/5 px-4 py-3 pr-10 text-sm text-white outline-none transition focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30"
+                    >
+                      {playerNames.map((option) => (
+                        <option
+                          key={option}
+                          value={option}
+                          className="bg-midnight-900"
+                        >
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Buyer's own name + number */}
+              {fontType === "custom" ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <div>
+                    <label
+                      htmlFor="custom-font-name"
+                      className="text-xs font-semibold text-zinc-300"
+                    >
+                      Name
+                    </label>
+                    <input
+                      id="custom-font-name"
+                      type="text"
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      maxLength={24}
+                      placeholder="E.g., ADITYA"
+                      className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm uppercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:tracking-normal placeholder:text-zinc-500 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30"
+                    />
+                  </div>
+                  <div className="sm:w-28">
+                    <label
+                      htmlFor="custom-font-number"
+                      className="text-xs font-semibold text-zinc-300"
+                    >
+                      Number
+                    </label>
+                    <input
+                      id="custom-font-number"
+                      type="text"
+                      inputMode="numeric"
+                      value={customNumber}
+                      onChange={(e) =>
+                        // Shirt numbers only — strip anything else as it's typed.
+                        setCustomNumber(e.target.value.replace(/\D/g, ""))
+                      }
+                      maxLength={2}
+                      placeholder="10"
+                      className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/30"
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <p className="mt-2 text-xs text-zinc-400">
                 High-quality official fonts — +{formatPrice(CUSTOM_FONT_FEE)}{" "}
                 extra.
+                {fontType === "custom" ? (
+                  <span className="text-amber-400">
+                    {" "}
+                    Custom prints are made to order:{" "}
+                    {formatPrice(CUSTOM_FONT_ADVANCE)} of this is payable in
+                    advance.
+                  </span>
+                ) : null}
               </p>
             </div>
           ) : null}

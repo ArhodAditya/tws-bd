@@ -326,6 +326,7 @@ export type Database = {
       };
       products: {
         Row: {
+          available_player_names: string[] | null;
           badge_text: string | null;
           category: string;
           created_at: string;
@@ -341,8 +342,10 @@ export type Database = {
           price: number;
           size_pattern: string;
           sizes: string[];
+          special_announcement: string | null;
         };
         Insert: {
+          available_player_names?: string[] | null;
           badge_text?: string | null;
           category?: string;
           created_at?: string;
@@ -358,8 +361,10 @@ export type Database = {
           price?: number;
           size_pattern?: string;
           sizes?: string[];
+          special_announcement?: string | null;
         };
         Update: {
+          available_player_names?: string[] | null;
           badge_text?: string | null;
           category?: string;
           created_at?: string;
@@ -375,6 +380,7 @@ export type Database = {
           price?: number;
           size_pattern?: string;
           sizes?: string[];
+          special_announcement?: string | null;
         };
         Relationships: [];
       };

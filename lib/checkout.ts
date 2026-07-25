@@ -2,15 +2,48 @@
 // shipping rates, and the WhatsApp order-message builder.
 
 import type { CartItem } from "@/context/CartContext";
-import { FALLBACK_WHATSAPP_NUMBER, UCL_PATCH_FEE, formatPrice } from "@/lib/shop";
+import {
+  CUSTOM_FONT_FEE,
+  FALLBACK_WHATSAPP_NUMBER,
+  UCL_PATCH_FEE,
+  fontAdvance,
+  fontFee,
+  fontTag,
+  formatPrice,
+} from "@/lib/shop";
 
-// A cart line's money total: the per-unit price (which already folds in the
-// custom-font fee when set) plus the UCL patch fee, times quantity. Single
-// source of truth so the cart subtotal, the drawer line, and the WhatsApp
-// receipt can never drift apart.
+// A cart line's money total: the base per-unit price plus its add-ons — the
+// +250 font fee (player or custom print) and the +200 UCL patch — times
+// quantity. Single source of truth so the cart subtotal, the drawer line, and
+// the WhatsApp receipt can never drift apart.
 export function cartLineTotal(item: CartItem): number {
-  const unitPrice = item.price + (item.uclPatch ? UCL_PATCH_FEE : 0);
+  const unitPrice =
+    item.price +
+    fontFee(item.fontSelection) +
+    (item.uclPatch ? UCL_PATCH_FEE : 0);
   return unitPrice * item.quantity;
+}
+
+// Advance owed for made-to-order printing: ৳300 per unit carrying the buyer's
+// own name/number. A squad-player print comes off the shelf and adds nothing.
+export function cartFontAdvance(items: CartItem[]): number {
+  return items.reduce(
+    (sum, item) => sum + fontAdvance(item.fontSelection) * item.quantity,
+    0
+  );
+}
+
+// What the buyer must bKash before the order is confirmed. A Full Advance is
+// the whole order; a Partial Advance is the delivery charge plus any custom
+// font advance.
+export function getRequiredAdvance(
+  payment: PaymentMethod,
+  items: CartItem[],
+  subtotal: number,
+  shipping: number
+): number {
+  if (payment === "full") return subtotal + shipping;
+  return shipping + cartFontAdvance(items);
 }
 
 // All 64 districts of Bangladesh, alphabetical. "Chattogram" must be spelled
@@ -82,9 +115,9 @@ export function buildOrderMessage(
     // through encodeURIComponent in buildWhatsappOrderLink, which turns these
     // newlines into %0A and preserves the indent, so the wa.me deep link stays
     // intact on mobile.
-    const customName = item.customName?.trim();
-    if (customName) {
-      lines.push(`    ↳ Custom Fonts: ${customName}`);
+    const tag = fontTag(item.fontSelection);
+    if (tag) {
+      lines.push(`    ↳ ${tag} (+${formatPrice(CUSTOM_FONT_FEE)})`);
     }
     if (item.uclPatch) {
       lines.push(`    ↳ Add-ons: UCL Patch (+${formatPrice(UCL_PATCH_FEE)})`);
@@ -93,6 +126,16 @@ export function buildOrderMessage(
   });
 
   const total = subtotal + shipping;
+  const advance = getRequiredAdvance(details.payment, items, subtotal, shipping);
+  const customFontAdvance = cartFontAdvance(items);
+
+  // On a partial advance, spell out what the number is made of — the delivery
+  // charge, plus the non-refundable custom-print advance when there is one — so
+  // the buyer can reconcile the figure they're asked to send.
+  const advanceBreakdown =
+    details.payment === "partial" && customFontAdvance > 0
+      ? ` (Delivery ${shipping} + Custom Font ${customFontAdvance})`
+      : "";
 
   return [
     "👑 THE WHITES BANGLADESH 👑",
@@ -114,6 +157,7 @@ export function buildOrderMessage(
     `• Grand Total: ${total} BDT`,
     "",
     `🏦 Payment Method: ${PAYMENT_LABEL[details.payment]}`,
+    `• Advance Payable: ${advance} BDT${advanceBreakdown}`,
     `📱 bKash Number: ${BKASH_NUMBER}`,
     "",
     DIVIDER,

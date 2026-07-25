@@ -116,6 +116,19 @@ export function parseCustomSizeChart(
   });
 }
 
+// Roster entries offered in the kit font dropdown, stored exactly as the admin
+// typed them (e.g. "Bellingham - 5"). Defensive parse of the
+// `available_player_names` text[] column — a null or malformed value must never
+// break the product page, it just means no player dropdown.
+export function parsePlayerNames(
+  value: Product["available_player_names"]
+): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((name) =>
+    typeof name === "string" && name.trim() ? [name.trim()] : []
+  );
+}
+
 // Prices are stored as plain numbers; the audience is Bangladesh, so format as
 // Bangladeshi Taka.
 export function formatPrice(price: number | null): string {
@@ -146,8 +159,87 @@ export function getProductDescription(
 // placeholder so a misconfigured deploy is obvious rather than silently wrong.
 export const FALLBACK_WHATSAPP_NUMBER = "880000000000";
 
-// Flat surcharge (BDT) for optional custom name/number printing on a jersey.
+// --- Font selection ---------------------------------------------------------
+// A kit can be ordered plain, with a squad player's name/number picked from the
+// roster the admin curated on the product, or with the buyer's own name and
+// number. The choice rides on the cart line and into the WhatsApp receipt, so it
+// lives here beside the fees it drives.
+
+export type FontType = "none" | "player" | "custom";
+
+export type FontSelection = {
+  type: FontType;
+  // "player": the roster entry verbatim (e.g. "Bellingham - 5").
+  // "custom": just the name the buyer typed.
+  text?: string;
+  // "custom" only — the shirt number typed alongside the name.
+  number?: string;
+};
+
+export const NO_FONT: FontSelection = { type: "none" };
+
+// Flat surcharge (BDT) for name/number printing on a jersey — the same for a
+// squad player's print and a buyer's own.
 export const CUSTOM_FONT_FEE = 250;
+
+// Extra advance (BDT) required on top of the delivery charge when the buyer asks
+// for their *own* name/number: a personalised print can't be resold if the order
+// is abandoned, so it's collected up front. Squad-player prints are stock items
+// and don't carry it.
+export const CUSTOM_FONT_ADVANCE = 300;
+
+// Canonical form of a raw selection: trimmed, and collapsed to "none" whenever
+// nothing usable was actually typed — so a half-filled form can never charge the
+// font fee. Every fee/label helper below funnels through this, which is what
+// keeps the product page, the cart and the receipt agreeing on one answer.
+export function normalizeFontSelection(
+  selection?: FontSelection | null
+): FontSelection {
+  if (!selection || selection.type === "none") return NO_FONT;
+
+  const text = selection.text?.trim() ?? "";
+  const number = selection.number?.trim() ?? "";
+
+  if (selection.type === "player") {
+    return text ? { type: "player", text } : NO_FONT;
+  }
+  if (!text && !number) return NO_FONT;
+  return { type: "custom", text, number };
+}
+
+// +250 for either kind of print, 0 for a plain kit.
+export function fontFee(selection?: FontSelection | null): number {
+  return normalizeFontSelection(selection).type === "none"
+    ? 0
+    : CUSTOM_FONT_FEE;
+}
+
+// +300 advance for a buyer's own print only.
+export function fontAdvance(selection?: FontSelection | null): number {
+  return normalizeFontSelection(selection).type === "custom"
+    ? CUSTOM_FONT_ADVANCE
+    : 0;
+}
+
+// Human-readable summary — "Player (Bellingham - 5)" or "Custom (ADITYA - 10)".
+// null when no font was chosen, so callers can skip the line entirely.
+export function describeFontSelection(
+  selection?: FontSelection | null
+): string | null {
+  const font = normalizeFontSelection(selection);
+  if (font.type === "none") return null;
+  if (font.type === "player") return `Player (${font.text})`;
+  // A custom print may be name-only or number-only; join whatever is there.
+  const detail = [font.text, font.number].filter(Boolean).join(" - ");
+  return `Custom (${detail})`;
+}
+
+// The bracketed tag the seller reads off the WhatsApp order, e.g.
+// "[Font: Custom (ADITYA - 10)]". null when no font was chosen.
+export function fontTag(selection?: FontSelection | null): string | null {
+  const description = describeFontSelection(selection);
+  return description ? `[Font: ${description}]` : null;
+}
 
 // Flat surcharge (BDT) for the optional Champions League (UCL) sleeve patch
 // upsell. Applied per unit, like the custom-font fee. Only offered on products
@@ -156,14 +248,14 @@ export const UCL_PATCH_FEE = 200;
 
 // Build a wa.me deep link with a pre-filled order message. `whatsappNumber`
 // comes from NEXT_PUBLIC_WHATSAPP_NUMBER; only digits are kept (wa.me needs an
-// international number with no +, spaces or dashes). When `customName` is set
-// (jersey font upsell), the surcharge is added and the order total + custom
-// text are appended to the message.
+// international number with no +, spaces or dashes). When a font is selected
+// (jersey font upsell), the surcharge is added and the order total + the
+// bracketed font tag are appended to the message.
 export function whatsappOrderUrl(
   product: Pick<Product, "name" | "price">,
   size: string | null,
   whatsappNumber: string,
-  customName?: string | null,
+  fontSelection?: FontSelection | null,
   uclPatch?: boolean
 ): string {
   const number = (whatsappNumber || FALLBACK_WHATSAPP_NUMBER).replace(
@@ -179,11 +271,19 @@ export function whatsappOrderUrl(
   // Optional add-ons accumulate onto the base price; a Total line is appended
   // whenever at least one is selected.
   let addOns = 0;
-  const trimmedName = customName?.trim();
-  if (trimmedName) {
+  const tag = fontTag(fontSelection);
+  if (tag) {
     addOns += CUSTOM_FONT_FEE;
-    lines.push(`*Custom Name:* ${trimmedName}`);
-    lines.push(`*Custom Font:* +${formatPrice(CUSTOM_FONT_FEE)}`);
+    lines.push(tag);
+    lines.push(`*Font Printing:* +${formatPrice(CUSTOM_FONT_FEE)}`);
+    // A buyer's own print is made to order, so flag its advance right here —
+    // the cart checkout folds the same amount into its Advance Payable line.
+    const advance = fontAdvance(fontSelection);
+    if (advance > 0) {
+      lines.push(
+        `*Custom Font Advance:* ${formatPrice(advance)} (payable in advance)`
+      );
+    }
   }
   if (uclPatch) {
     addOns += UCL_PATCH_FEE;

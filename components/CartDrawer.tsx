@@ -16,13 +16,20 @@ import {
 } from "lucide-react";
 import { SPRING } from "@/components/motion/primitives";
 import { WhatsAppIcon } from "@/components/BrandIcons";
-import { useCart } from "@/context/CartContext";
-import { formatPrice, UCL_PATCH_FEE } from "@/lib/shop";
+import { cartLineKey, useCart } from "@/context/CartContext";
+import {
+  CUSTOM_FONT_FEE,
+  describeFontSelection,
+  formatPrice,
+  UCL_PATCH_FEE,
+} from "@/lib/shop";
 import {
   BD_DISTRICTS,
   BKASH_NUMBER,
   buildWhatsappOrderLink,
+  cartFontAdvance,
   cartLineTotal,
+  getRequiredAdvance,
   getShipping,
   type PaymentMethod,
 } from "@/lib/checkout";
@@ -73,6 +80,10 @@ export default function CartDrawer() {
 
   const shipping = getShipping(district);
   const total = subtotal + shipping;
+  // What has to be bKash'd to confirm: the whole order on a full advance,
+  // otherwise the delivery charge plus ৳300 per made-to-order custom print.
+  const fontAdvance = cartFontAdvance(items);
+  const advance = getRequiredAdvance(payment, items, subtotal, shipping);
 
   const filteredDistricts = useMemo(() => {
     const q = districtQuery.trim().toLowerCase();
@@ -242,9 +253,14 @@ export default function CartDrawer() {
             <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
               {/* Items */}
               <ul className="space-y-3">
-                {items.map((item) => (
+                {items.map((item) => {
+                  // One key identifies the line for React, for removal and for
+                  // quantity changes.
+                  const key = cartLineKey(item);
+                  const fontLabel = describeFontSelection(item.fontSelection);
+                  return (
                   <li
-                    key={`${item.id}__${item.size ?? ""}__${item.customName ?? ""}__${item.uclPatch ? "ucl" : ""}`}
+                    key={key}
                     className="flex gap-3 rounded-xl border border-gray-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]"
                   >
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-midnight-950 dark:border-white/10">
@@ -269,9 +285,9 @@ export default function CartDrawer() {
                           Size: {item.size}
                         </p>
                       ) : null}
-                      {item.customName ? (
+                      {fontLabel ? (
                         <p className="truncate text-xs text-gold-700 dark:text-gold-300">
-                          Fonts: {item.customName}
+                          Font: {fontLabel} (+{formatPrice(CUSTOM_FONT_FEE)})
                         </p>
                       ) : null}
                       {item.uclPatch ? (
@@ -286,14 +302,7 @@ export default function CartDrawer() {
                     <div className="flex flex-col items-end justify-between">
                       <button
                         type="button"
-                        onClick={() =>
-                          removeItem(
-                            item.id,
-                            item.size,
-                            item.customName,
-                            item.uclPatch
-                          )
-                        }
+                        onClick={() => removeItem(key)}
                         aria-label={`Remove ${item.name}`}
                         className="text-slate-400 transition hover:text-red-500"
                       >
@@ -303,15 +312,7 @@ export default function CartDrawer() {
                         <button
                           type="button"
                           aria-label="Decrease quantity"
-                          onClick={() =>
-                            updateQuantity(
-                              item.id,
-                              item.size,
-                              item.customName,
-                              item.uclPatch,
-                              item.quantity - 1
-                            )
-                          }
+                          onClick={() => updateQuantity(key, item.quantity - 1)}
                           className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-slate-600 transition hover:border-gold-500/50 hover:text-gold-600 dark:border-white/15 dark:text-zinc-200 dark:hover:text-gold-300"
                         >
                           <Minus className="h-3.5 w-3.5" />
@@ -322,15 +323,7 @@ export default function CartDrawer() {
                         <button
                           type="button"
                           aria-label="Increase quantity"
-                          onClick={() =>
-                            updateQuantity(
-                              item.id,
-                              item.size,
-                              item.customName,
-                              item.uclPatch,
-                              item.quantity + 1
-                            )
-                          }
+                          onClick={() => updateQuantity(key, item.quantity + 1)}
                           className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-slate-600 transition hover:border-gold-500/50 hover:text-gold-600 dark:border-white/15 dark:text-zinc-200 dark:hover:text-gold-300"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -338,7 +331,8 @@ export default function CartDrawer() {
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
 
               {/* Checkout fields */}
@@ -486,6 +480,14 @@ export default function CartDrawer() {
                   </div>
                   <p className="text-xs text-amber-600 dark:text-amber-400">
                     Note: Delivery charge must be advanced to confirm the order.
+                    {fontAdvance > 0 ? (
+                      <>
+                        {" "}
+                        Custom name/number prints are made to order, so{" "}
+                        {formatPrice(fontAdvance)} of the printing charge is also
+                        payable in advance.
+                      </>
+                    ) : null}
                   </p>
 
                   {/* bKash advance-payment instructions */}
@@ -526,6 +528,19 @@ export default function CartDrawer() {
                   <dd className="tabular-nums text-gold-700 dark:text-gold-300">
                     {formatPrice(total)}
                   </dd>
+                </div>
+                {/* The figure to bKash now — the rest is due on delivery. */}
+                <div className="flex justify-between font-semibold text-slate-700 dark:text-zinc-200">
+                  <dt>
+                    Advance Payable
+                    {payment === "partial" && fontAdvance > 0 ? (
+                      <span className="font-normal text-slate-500 dark:text-zinc-400">
+                        {" "}
+                        (delivery + custom font)
+                      </span>
+                    ) : null}
+                  </dt>
+                  <dd className="tabular-nums">{formatPrice(advance)}</dd>
                 </div>
               </dl>
 

@@ -29,6 +29,8 @@ export default function NewProductForm() {
   const [images, setImages] = useState<string[]>([]);
   const [sizes, setSizes] = useState("S, M, L, XL, XXL");
   const [badgeText, setBadgeText] = useState("");
+  const [specialAnnouncement, setSpecialAnnouncement] = useState("");
+  const [playerNames, setPlayerNames] = useState("");
   const [inStock, setInStock] = useState(true);
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
@@ -93,6 +95,8 @@ export default function NewProductForm() {
       images,
       sizes: toList(sizes),
       badge_text: badgeText.trim() || null,
+      special_announcement: specialAnnouncement.trim() || null,
+      available_player_names: toList(playerNames),
       in_stock: inStock,
       is_active: isActive,
       is_featured: isFeatured,
@@ -247,6 +251,48 @@ export default function NewProductForm() {
           placeholder="15% OFF, HOT, NEW DROP…"
           className={inputClass}
         />
+      </div>
+
+      {/* Special Announcement — highlighted banner under the price */}
+      <div className="space-y-2">
+        <label htmlFor="special_announcement" className={labelClass}>
+          Special Announcement{" "}
+          <span className="font-normal text-zinc-500">
+            (optional — highlighted banner under the price)
+          </span>
+        </label>
+        <input
+          id="special_announcement"
+          type="text"
+          value={specialAnnouncement}
+          maxLength={120}
+          onChange={(e) => setSpecialAnnouncement(e.target.value)}
+          placeholder="Pre-order now — ships from 15 August!"
+          className={inputClass}
+        />
+      </div>
+
+      {/* Available Player Names — the roster offered in the font dropdown */}
+      <div className="space-y-2">
+        <label htmlFor="available_player_names" className={labelClass}>
+          Available Player Names{" "}
+          <span className="font-normal text-zinc-500">
+            (comma or line separated — Kits only)
+          </span>
+        </label>
+        <textarea
+          id="available_player_names"
+          rows={3}
+          value={playerNames}
+          onChange={(e) => setPlayerNames(e.target.value)}
+          placeholder="Bellingham - 5, Mbappe - 9, Vinícius Jr - 7"
+          className={`${inputClass} resize-y leading-relaxed`}
+        />
+        <p className="text-xs text-zinc-500">
+          Each entry becomes one option in the &ldquo;Player Name&rdquo; font
+          dropdown, printed on the order exactly as typed here. Leave blank to
+          offer custom names only.
+        </p>
       </div>
 
       {/* In stock */}

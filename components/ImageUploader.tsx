@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ImagePlus, LoaderCircle, TriangleAlert, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  LoaderCircle,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { uploadImageToCloudinary } from "@/lib/cloudinary-upload";
 
 export default function ImageUploader({
@@ -35,6 +42,26 @@ export default function ImageUploader({
   const removeAt = (index: number) => {
     onChange((prev) => prev.filter((_, i) => i !== index));
   };
+
+  // Reorder by swapping with the neighbour. Index 0 is the storefront
+  // thumbnail, so this is how an admin picks which photo leads the product
+  // card. Functional update for the same reason as addUrl: an in-flight upload
+  // resolving mid-reorder would otherwise write back a stale array.
+  const moveBy = (index: number, delta: number) => {
+    onChange((prev) => {
+      const target = index + delta;
+      // Guard the ends. The buttons are disabled there too, but state is the
+      // thing that has to stay correct.
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  // Ordering is meaningless for the single-image article form, and for a
+  // one-item gallery there is nothing to swap with.
+  const showReorder = multiple && value.length > 1;
 
   // Uploads are signed server-side (admin-only) and posted straight to
   // Cloudinary — no unsigned preset, no third-party widget script.
@@ -111,9 +138,10 @@ export default function ImageUploader({
                 decoding="async"
                 className="h-full w-full object-cover"
               />
-              {/* First image is the storefront thumbnail. */}
+              {/* First image is the storefront thumbnail. Sits top-left so the
+                  reorder bar owns the bottom edge. */}
               {index === 0 ? (
-                <span className="absolute bottom-1.5 left-1.5 rounded-full bg-gold-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-midnight-950 shadow">
+                <span className="absolute left-1.5 top-1.5 rounded-full bg-gold-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-midnight-950 shadow">
                   Primary
                 </span>
               ) : null}
@@ -125,12 +153,45 @@ export default function ImageUploader({
               >
                 <X className="h-4 w-4" />
               </button>
+
+              {/* Reorder bar. Always visible rather than hover-revealed — the
+                  admin screens get used on phones, where hover never fires. */}
+              {showReorder ? (
+                <div className="absolute inset-x-0 bottom-0 flex border-t border-white/15 bg-midnight-950/80 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={() => moveBy(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move image ${index + 1} left`}
+                    className="flex flex-1 items-center justify-center py-2 text-white transition hover:bg-gold-500 hover:text-midnight-950 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span aria-hidden className="w-px bg-white/15" />
+                  <button
+                    type="button"
+                    onClick={() => moveBy(index, 1)}
+                    disabled={index === value.length - 1}
+                    aria-label={`Move image ${index + 1} right`}
+                    className="flex flex-1 items-center justify-center py-2 text-white transition hover:bg-gold-500 hover:text-midnight-950 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
       ) : (
         <p className="text-xs text-midnight-900/40">No images uploaded yet.</p>
       )}
+
+      {showReorder ? (
+        <p className="text-xs text-midnight-900/50">
+          The <strong className="font-semibold">Primary</strong> image leads the
+          product card and the gallery. Use the arrows to reorder, then save.
+        </p>
+      ) : null}
     </div>
   );
 }

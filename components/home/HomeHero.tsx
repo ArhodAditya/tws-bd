@@ -73,10 +73,10 @@ export default function HomeHero() {
           never exposes an edge. */}
       <Parallax distance={60} className="absolute inset-0 -z-20">
         <div className="relative h-[125%] w-full -translate-y-[8%]">
-          {/* LCP image on a mostly-mobile audience, so it must never be the
-              raw 2.16 MB PNG. Served from Cloudinary's `upload` path, which
-              cloudinaryLoader.ts rewrites to f_auto/q_auto at the requested
-              width (~183 KB at w=1920, vs 2.27 MB raw). */}
+          {/* LCP image on a mostly-mobile audience. Served from public/ after
+              the Cloudinary `upload` URLs went dead. The loader passes local
+              paths through untouched, so these ship exactly as they sit on
+              disk — hence pre-compressed WebP (~140/155 KB). See lib/assets.ts. */}
           {/* One <img> whose source swaps at the md breakpoint. The mobile
               asset is pre-cropped, so it just needs centring; the landscape
               desktop asset keeps its established 50% 20% focal point. */}

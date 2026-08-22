@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShieldPlus,
   ShoppingBag,
+  Star,
   Users,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
@@ -184,10 +185,32 @@ export default async function AdminPage() {
             </h2>
             <p className="mt-1.5 flex-1 text-sm text-zinc-400">
               Approve fan-submitted reviews to publish them on the “Voices of the
-              Madridistas” wall in the Fans Zone — or pull any back down.
+              Madridistas” wall in the Fans Zone — pull any back down, or delete
+              one for good.
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
               Open moderation queue
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+
+          {/* Moderate Product Reviews */}
+          <Link
+            href="/admin/product-reviews"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
+              <Star className="h-5 w-5" />
+            </span>
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
+              Moderate Product Reviews
+            </h2>
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
+              Read every star rating left on shop items. These go live on
+              submission, so delete is the way to take one down — permanently.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
+              Open product reviews
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>

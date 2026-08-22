@@ -129,3 +129,57 @@ export async function addAdminManualReview(
   revalidatePath("/admin/reviews");
   return { success: true };
 }
+
+// Permanently delete a fan review (the "Voices of the Madridistas" wall). There
+// is no soft-delete or undo — moderation here is for content that shouldn't
+// exist at all, so unapproving via toggleReviewApproval is the reversible
+// option and this is the final one. Service-role client for the same reason as
+// toggleReviewApproval: the admin doesn't own the row. Admin status re-verified.
+export async function deleteFanReview(reviewId: string): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("fan_reviews").delete().eq("id", reviewId);
+
+  if (error) return { success: false, message: error.message };
+
+  // Drop it from the public wall and the moderation queue at once.
+  revalidatePath("/fans-zone");
+  revalidatePath("/admin/reviews");
+  return { success: true };
+}
+
+// Permanently delete a product review (a star rating + comment on a shop item).
+// Service-role client: product_reviews RLS scopes DELETE to the review's author,
+// and while the "Admins manage product reviews" policy would also let an admin
+// through, the service role keeps this consistent with every other admin write
+// and immune to a policy being tightened later. Admin status re-verified above.
+export async function deleteProductReview(
+  reviewId: string
+): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  // `.select()` returns the deleted row so we can (a) tell a genuine 0-row
+  // delete from a success and (b) revalidate that product's own page.
+  const { data, error } = await admin
+    .from("product_reviews")
+    .delete()
+    .eq("id", reviewId)
+    .select("product_id")
+    .maybeSingle();
+
+  if (error) return { success: false, message: error.message };
+  if (!data) {
+    return { success: false, message: "That review no longer exists." };
+  }
+
+  // The shop listing shows aggregate ratings, so refresh it alongside the
+  // product's own page and the moderation queue.
+  revalidatePath("/shop");
+  revalidatePath(`/shop/${data.product_id}`);
+  revalidatePath("/admin/product-reviews");
+  return { success: true };
+}

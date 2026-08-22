@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Clock, LoaderCircle, MessageSquareQuote } from "lucide-react";
-import { toggleReviewApproval } from "@/app/actions/reviews";
+import { Clock, LoaderCircle, MessageSquareQuote, Trash2 } from "lucide-react";
+import { deleteFanReview, toggleReviewApproval } from "@/app/actions/reviews";
 import {
   formatFanReviewDate,
   getReviewerName,
@@ -13,6 +13,8 @@ import {
 // Admin moderation queue for fan reviews. Each row shows the review, its author
 // and date, plus a toggle switch wired to `toggleReviewApproval`. The flip is
 // optimistic and reverts on failure (same pattern as UserManagementList).
+// Delete is the permanent counterpart to the toggle: unapproving hides a review,
+// deleting destroys it, so it sits behind a confirm().
 export default function ReviewModerationList({
   reviews: initial,
 }: {
@@ -20,6 +22,7 @@ export default function ReviewModerationList({
 }) {
   const [reviews, setReviews] = useState<FanReviewWithAuthor[]>(initial);
   const [pending, setPending] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   const toggle = async (review: FanReviewWithAuthor) => {
@@ -43,6 +46,24 @@ export default function ReviewModerationList({
       setError(result.message ?? "Could not update this review.");
     }
     setPending((p) => ({ ...p, [review.id]: false }));
+  };
+
+  const remove = async (review: FanReviewWithAuthor) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+
+    setError(null);
+    setDeleting((d) => ({ ...d, [review.id]: true }));
+
+    const result = await deleteFanReview(review.id);
+
+    if (!result.success) {
+      setError(result.message ?? "Could not delete this review.");
+      setDeleting((d) => ({ ...d, [review.id]: false }));
+      return;
+    }
+    // Drop the row locally rather than optimistically — a failed delete that
+    // had to re-insert the row would lose its place in the date ordering.
+    setReviews((list) => list.filter((r) => r.id !== review.id));
   };
 
   if (reviews.length === 0) {
@@ -81,6 +102,7 @@ export default function ReviewModerationList({
       <ul className="space-y-4">
         {reviews.map((review) => {
           const busy = pending[review.id];
+          const removing = deleting[review.id];
           const name = getReviewerName(review);
           const avatar = review.profiles?.avatar_url ?? null;
           const approved = review.is_approved;
@@ -141,7 +163,7 @@ export default function ReviewModerationList({
                       approved ? "Unapprove review" : "Approve review"
                     }
                     onClick={() => toggle(review)}
-                    disabled={busy}
+                    disabled={busy || removing}
                     className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                       approved
                         ? "bg-emerald-500"
@@ -153,6 +175,21 @@ export default function ReviewModerationList({
                         approved ? "translate-x-5" : "translate-x-0.5"
                       }`}
                     />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => remove(review)}
+                    disabled={removing}
+                    aria-label={`Delete review by ${name}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+                  >
+                    {removing ? (
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    Delete
                   </button>
                 </div>
               </div>

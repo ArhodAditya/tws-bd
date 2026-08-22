@@ -30,3 +30,27 @@ export function formatReviewDate(value: string): string {
     year: "numeric",
   });
 }
+
+// A review joined with both its author and the product it belongs to — the
+// shape the admin moderation queue needs, since it lists reviews across the
+// whole catalogue rather than one product at a time. Either side is null only
+// if the referenced row was removed.
+export type ReviewWithContext = Review & {
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  products: {
+    name: string;
+  } | null;
+};
+
+// Name shown against a product review. Product reviews always carry a real
+// user_id (RLS enforces it), so the only gap is a profile with no name set.
+export const FALLBACK_REVIEWER_NAME = "Anonymous Madridista";
+
+export function getProductReviewerName(
+  review: Pick<ReviewWithContext, "profiles">
+): string {
+  return review.profiles?.full_name?.trim() || FALLBACK_REVIEWER_NAME;
+}

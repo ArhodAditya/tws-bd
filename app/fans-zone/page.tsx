@@ -1,43 +1,21 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, MessagesSquare, ShieldHalf, Sparkles, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import { fetchPredictorSettings } from "@/lib/predictor-settings";
 import { type FanReviewWithAuthor } from "@/lib/fan-reviews";
-import PredictorCard from "@/components/PredictorCard";
-import PredictorOffline from "@/components/PredictorOffline";
-import Leaderboard from "@/components/Leaderboard";
 import Reveal from "@/components/Reveal";
 import FanReviewCard from "@/components/FanReviewCard";
 import FanReviewForm from "@/components/FanReviewForm";
+import ReyesDeEuropa from "@/components/fans-zone/ReyesDeEuropa";
 
 export const metadata: Metadata = {
   title: "Fans Zone — The Whites Stories",
   description:
-    "The command center for Madridistas in Bangladesh — predict the next match and climb the global leaderboard. ¡Hala Madrid!",
+    "The command center for Madridistas in Bangladesh — explore the map of Real Madrid's 15 European Cup triumphs, build your dream XI, and add your voice. ¡Hala Madrid!",
 };
 
-// Streamed-in placeholder so the hub paints instantly while the leaderboard
-// query resolves on the server.
-function LeaderboardSkeleton() {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xl backdrop-blur dark:border-white/10 dark:bg-midnight-900/60 sm:p-6">
-      <div className="animate-pulse space-y-3">
-        <div className="mb-5 h-6 w-44 rounded bg-slate-200 dark:bg-white/10" />
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-14 rounded-xl bg-slate-100 dark:bg-white/5" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default async function FansZonePage() {
-  // The Match Predictor "kill switch": when an admin has set it offline we show
-  // a premium offline card instead of the predictor (or its sample fallback).
   const supabase = await createClient();
-  const predictorSettings = await fetchPredictorSettings(supabase);
 
   // Approved fan reviews power the "Voices of the Madridistas" wall, newest
   // first. RLS only ever returns approved rows here; if the table is missing
@@ -71,32 +49,21 @@ export default async function FansZonePage() {
             The Madridista <span className="text-gradient-gold">Command Center</span>
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-slate-600 dark:text-zinc-300">
-            Predict the next fixture, back your first goalscorer, and rise
-            through the ranks of the most passionate Real Madrid community in
-            Bangladesh.
+            Trace every European Cup triumph across the continent, build your
+            dream XI, and add your voice to the most passionate Real Madrid
+            community in Bangladesh.
           </p>
         </header>
 
-        {/* Dashboard — Predictor (left / top) + Leaderboard (right) */}
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:mt-12 lg:grid-cols-5">
-          <div className="lg:col-span-3">
-            {predictorSettings.is_active ? (
-              <PredictorCard />
-            ) : (
-              <PredictorOffline message={predictorSettings.offline_message} />
-            )}
-          </div>
-          <div className="lg:col-span-2">
-            <Suspense fallback={<LeaderboardSkeleton />}>
-              <Leaderboard />
-            </Suspense>
-          </div>
+        {/* Reyes de Europa — the interactive map of all fifteen titles */}
+        <div className="mt-10 animate-in fade-in slide-in-from-bottom-8 delay-150 duration-700 ease-out fill-mode-both lg:mt-12">
+          <ReyesDeEuropa />
         </div>
 
         {/* Squad Builder CTA */}
         <Link
           href="/fans-zone/squad-builder"
-          className="group mt-6 flex flex-col items-start justify-between gap-4 overflow-hidden rounded-2xl border border-gold-500/20 bg-gradient-to-r from-white to-slate-100 p-6 shadow-xl backdrop-blur transition-colors hover:border-gold-500/40 dark:from-midnight-900/80 dark:to-midnight-900/40 sm:flex-row sm:items-center"
+          className="group mt-8 flex flex-col items-start justify-between gap-4 overflow-hidden rounded-2xl border border-gold-500/20 bg-gradient-to-r from-white to-slate-100 p-6 shadow-xl backdrop-blur transition-colors hover:border-gold-500/40 dark:from-midnight-900/80 dark:to-midnight-900/40 sm:flex-row sm:items-center"
         >
           <div className="flex items-center gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gold-500/30 bg-gold-500/10 text-gold-700 dark:text-gold-300">

@@ -12,7 +12,7 @@ import {
 
 // Admin moderation queue for fan reviews. Each row shows the review, its author
 // and date, plus a toggle switch wired to `toggleReviewApproval`. The flip is
-// optimistic and reverts on failure (same pattern as UserManagementList).
+// optimistic and reverts on failure.
 // Delete is the permanent counterpart to the toggle: unapproving hides a review,
 // deleting destroys it, so it sits behind a confirm().
 export default function ReviewModerationList({

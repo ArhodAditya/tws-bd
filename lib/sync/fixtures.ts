@@ -52,7 +52,8 @@ interface SofascoreScheduleResponse {
 /**
  * Fetch Real Madrid's upcoming fixtures from the Sofascore RapidAPI wrapper and
  * upsert them into `public.matches`, deduping on `api_fixture_id`. Logos are not
- * stored — the public Predictor builds them from the team ids.
+ * stored — they are built from the team ids at display time (see
+ * `getFixtureSides` in lib/fans.ts).
  */
 export async function fetchAndUpsertFixtures(): Promise<SyncFixturesResult> {
   const apiKey = process.env.RAPIDAPI_KEY;
@@ -119,7 +120,7 @@ export async function fetchAndUpsertFixtures(): Promise<SyncFixturesResult> {
         match_date: event.startTimestamp
           ? new Date(event.startTimestamp * 1000).toISOString()
           : null,
-        // The public Predictor queries `status = 'upcoming'`, so tag synced rows.
+        // The admin fixtures list queries `status = 'upcoming'`, so tag synced rows.
         status: "upcoming",
       }));
 

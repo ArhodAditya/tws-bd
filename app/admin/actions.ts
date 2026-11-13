@@ -17,29 +17,6 @@ export type ActionResult = {
   message?: string;
 };
 
-// Toggle whether a user appears on the public Fan Zone leaderboard. Uses the
-// service-role client so an admin can update *another* user's row (profiles RLS
-// typically restricts updates to the owner). Admin status is re-verified above.
-export async function setLeaderboardVisibility(
-  userId: string,
-  visible: boolean
-): Promise<ActionResult> {
-  const gate = await requireAdmin();
-  if (!gate.success) return gate;
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("profiles")
-    .update({ show_on_leaderboard: visible })
-    .eq("id", userId);
-
-  if (error) return { success: false, message: error.message };
-
-  // Reflect the change on the public leaderboard immediately.
-  revalidatePath("/fans-zone");
-  return { success: true };
-}
-
 // Permanently delete a news article. Uses the service-role client so an admin
 // can remove *any* article regardless of articles RLS (which typically scopes
 // deletes to the author). Admin status is re-verified above — Server Actions
@@ -275,9 +252,8 @@ export async function addAdminByEmail(email: string): Promise<ActionResult> {
     if (insertError) return { success: false, message: insertError.message };
   }
 
-  // Refresh the admin views that display roles.
+  // Refresh the admin view that displays roles.
   revalidatePath("/admin/admins");
-  revalidatePath("/admin/users");
   return { success: true, message: `${target} is now an admin.` };
 }
 

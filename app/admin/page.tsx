@@ -12,7 +12,6 @@ import {
   ShieldPlus,
   ShoppingBag,
   Star,
-  Users,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { isSuperAdmin, isCurrentUserAdmin } from "@/lib/admin";
@@ -142,8 +141,8 @@ export default async function AdminPage() {
               Sync Fixtures
             </h2>
             <p className="mt-1.5 flex-1 text-sm text-zinc-400">
-              Pull Real Madrid&apos;s upcoming fixtures from Sofascore and feed
-              the Match Predictor — deduped by fixture id.
+              Pull Real Madrid&apos;s upcoming fixtures from Sofascore — deduped
+              by fixture id, so syncing twice never doubles a match.
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
               Open fixtures sync
@@ -211,27 +210,6 @@ export default async function AdminPage() {
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
               Open product reviews
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </Link>
-
-          {/* Manage Users */}
-          <Link
-            href="/admin/users"
-            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
-          >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
-              <Users className="h-5 w-5" />
-            </span>
-            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
-              Manage Users
-            </h2>
-            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
-              Control which accounts appear on the public Fan Zone leaderboard —
-              flip any user between visible and hidden.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
-              Leaderboard visibility
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>

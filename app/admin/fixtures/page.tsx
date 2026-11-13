@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  ArrowLeft,
-  CalendarClock,
-  ShieldCheck,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowLeft, CalendarClock, ShieldCheck } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import { getFixtureSides, formatKickoff, type Match } from "@/lib/fans";
-import { fetchPredictorSettings } from "@/lib/predictor-settings";
 import SyncFixturesButton from "@/components/SyncFixturesButton";
-import PredictorSettingsForm from "@/components/PredictorSettingsForm";
 
 export const metadata: Metadata = {
   title: "Sync Fixtures — The Whites Stories",
@@ -39,8 +32,6 @@ export default async function AdminFixturesPage() {
     .order("match_date", { ascending: true });
 
   const upcoming: Match[] = fixtures ?? [];
-
-  const predictorSettings = await fetchPredictorSettings(supabase);
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -130,28 +121,6 @@ export default async function AdminFixturesPage() {
               })}
             </ul>
           )}
-        </div>
-
-        {/* Predictor Display Settings — the off-season kill switch */}
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-slate-900/40">
-          <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
-              <SlidersHorizontal className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Predictor Display Settings
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-zinc-400">
-                Toggle the public Match Predictor and set the message fans see
-                while it&apos;s offline.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <PredictorSettingsForm initialSettings={predictorSettings} />
-          </div>
         </div>
       </div>
     </div>

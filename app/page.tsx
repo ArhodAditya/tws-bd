@@ -20,7 +20,7 @@ const SECTIONS = [
   {
     href: "/fans-zone",
     title: "Fans Zone",
-    blurb: "Watch parties, predictions, and the community table.",
+    blurb: "Fifteen European nights on one map, your dream XI, and fan voices.",
   },
   {
     href: "/shop",

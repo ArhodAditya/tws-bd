@@ -29,6 +29,11 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-bricolage);
+  /* Ibarra Real Nova (italic) — loaded only by the Fans Zone map, which sets
+     --font-ibarra on its own root. The serif fallbacks cover the font swap. */
+  --font-regal:
+    var(--font-ibarra), "Iowan Old Style", "Palatino Linotype", Palatino,
+    Georgia, serif;
 }
 
 /* The Whites Stories — matchday palette: crisp white, deep midnight navy,
@@ -177,6 +182,57 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* ===== Reyes de Europa — glass ============================================
+   The Fans Zone title card (desktop) and bottom sheet (mobile) share one glass
+   surface: a dark tint over a heavy backdrop blur, a soft specular sheen from
+   the top-left corner, and a 1px gold edge. */
+.glass-panel {
+  background-image:
+    linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.03) 32%,
+      rgba(255, 255, 255, 0) 58%
+    ),
+    linear-gradient(180deg, rgba(22, 26, 40, 0.62), rgba(9, 11, 18, 0.84));
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+}
+/* No backdrop-filter (older browsers): fall back to a solid panel rather than
+   see-through text over the map. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel {
+    background-image: linear-gradient(180deg, #161a28, #0b0e16);
+  }
+}
+
+/* 1px gold edge drawn as a gradient ring, so it can catch the light at one
+   corner and fall away at the other — a plain `border` can't do that. The mask
+   keeps only the 1px padding band of the pseudo-element. */
+.edge-gold::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    140deg,
+    rgba(246, 236, 196, 0.9) 0%,
+    rgba(212, 175, 55, 0.55) 24%,
+    rgba(212, 175, 55, 0.14) 58%,
+    rgba(212, 175, 55, 0.5) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 /* Cinematic scroll reveal — elements start hidden and slide/fade up once they

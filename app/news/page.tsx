@@ -11,9 +11,12 @@ export const metadata: Metadata = {
 
 export default async function NewsPage() {
   const supabase = await createClient();
+  // Public feed: hidden (is_published = false) articles are excluded, so an
+  // admin can pull a story without deleting it.
   const { data, error } = await supabase
     .from("articles")
     .select("*, profiles(full_name, avatar_url)")
+    .eq("is_published", true)
     .order("created_at", { ascending: false });
 
   // Fall back to sample content when the table is empty or unreachable, so the

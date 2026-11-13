@@ -30,6 +30,9 @@ export type Database = {
           created_at: string;
           id: string;
           image_url: string | null;
+          // Editorial visibility. false hides the article from the public news
+          // index, homepage teaser, article page and sitemap without deleting it.
+          is_published: boolean;
           slug: string | null;
           title: string | null;
         };
@@ -40,6 +43,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           image_url?: string | null;
+          is_published?: boolean;
           slug?: string | null;
           title?: string | null;
         };
@@ -50,6 +54,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           image_url?: string | null;
+          is_published?: boolean;
           slug?: string | null;
           title?: string | null;
         };

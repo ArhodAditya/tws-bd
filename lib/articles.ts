@@ -121,6 +121,7 @@ export const MOCK_ARTICLES: ArticleWithAuthor[] = [
     image_url: null,
     slug: "real-madrid-clinch-la-liga-at-the-bernabeu",
     title: "Real Madrid Clinch La Liga Title in Front of a Roaring Bernabéu",
+    is_published: true,
     content:
       "The Santiago Bernabéu erupted as Real Madrid lifted the La Liga trophy once again, confirming the title with two fixtures still to play.\n\nFrom the opening whistle the home side dictated the tempo, pressing high and moving the ball with the kind of authority that has defined this campaign. The breakthrough arrived early and the lead never looked in doubt.\n\nFor the supporters of The Whites Stories watching from thousands of miles away, it was another night to remember in a season that has delivered drama, brilliance, and silverware. ¡Hala Madrid!",
     profiles: { full_name: "TWS Newsroom", avatar_url: null },
@@ -133,6 +134,7 @@ export const MOCK_ARTICLES: ArticleWithAuthor[] = [
     image_url: null,
     slug: "tactical-breakdown-midfield-control",
     title: "Tactical Breakdown: How Madrid Strangled the Midfield",
+    is_published: true,
     content:
       "Control in the middle third has been the foundation of Madrid's success, and the latest performance was a masterclass in structure.\n\nBy staggering the midfield three and inviting pressure onto a single pivot, the side consistently created numerical superiority on the half-turn. Every time the opposition stepped up, a passing lane opened behind them.\n\nIt is the sort of detail that rarely makes the highlight reel but wins matches — and titles.",
     profiles: { full_name: "A. Rahman", avatar_url: null },
@@ -145,6 +147,7 @@ export const MOCK_ARTICLES: ArticleWithAuthor[] = [
     image_url: null,
     slug: "galactico-extension-through-2030",
     title: "Star Forward Commits Future With Extension Through 2030",
+    is_published: true,
     content:
       "Real Madrid have announced a contract extension that keeps a cornerstone of the attack at the club until 2030.\n\nThe agreement ends a summer of speculation and signals the club's intent to build the next era around a core of elite, in-prime talent.\n\nFans greeted the news with relief and celebration across social media.",
     profiles: { full_name: "TWS Newsroom", avatar_url: null },
@@ -157,6 +160,7 @@ export const MOCK_ARTICLES: ArticleWithAuthor[] = [
     image_url: null,
     slug: "la-fabrica-rising-stars",
     title: "The Next Generation: La Fábrica's Rising Stars to Watch",
+    is_published: true,
     content:
       "La Fábrica continues to be one of the most productive academies in world football, and a fresh crop of talent is knocking on the first-team door.\n\nEach of these players brings something different — pace, vision, composure — but they share the technical grounding and competitive edge that the badge demands.\n\nKeep an eye on these names; the future of the club is bright.",
     // No linked profile — exercises the "The Whites Admin" fallback.

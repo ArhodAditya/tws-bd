@@ -43,9 +43,11 @@ export default async function Home() {
   // half-empty. The featured query returns [] if the is_featured column doesn't
   // exist yet (migration not applied), which simply hides the section.
   const [newsRes, productRes, featuredRes] = await Promise.all([
+    // Published only — hidden articles stay off the homepage teaser.
     supabase
       .from("articles")
       .select("*, profiles(full_name, avatar_url)")
+      .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(3),
     supabase

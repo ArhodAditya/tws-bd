@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Calendar, FileText, Newspaper, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  EyeOff,
+  FileText,
+  Newspaper,
+  Pencil,
+} from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import { CategoryBadge } from "@/components/NewsCard";
 import DeleteArticleButton from "@/components/DeleteArticleButton";
+import ArticleVisibilityToggle from "@/components/ArticleVisibilityToggle";
 import { formatArticleDate, type ArticleWithAuthor } from "@/lib/articles";
 
 export const metadata: Metadata = {
@@ -31,12 +40,18 @@ export default async function AdminArticlesPage() {
 
   // Real DB articles only — the sample/mock fallbacks aren't stored and so can't
   // be edited or deleted.
-  const { data } = await supabase
+  //
+  // Service-role client on purpose: the articles SELECT policy exposes only
+  // published rows, so the cookie (anon-key) client would silently drop the
+  // hidden articles this page exists to manage. The page is gated above.
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("articles")
     .select("*, profiles(full_name, avatar_url)")
     .order("created_at", { ascending: false });
 
   const articles: ArticleWithAuthor[] = data ?? [];
+  const hiddenCount = articles.filter((a) => !a.is_published).length;
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -62,7 +77,7 @@ export default async function AdminArticlesPage() {
           </div>
           <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
             <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Published Articles
+              All Articles
             </h1>
             <Link
               href="/admin/articles/new"
@@ -73,8 +88,9 @@ export default async function AdminArticlesPage() {
             </Link>
           </div>
           <p className="mt-3 max-w-xl text-zinc-300">
-            Edit any story or remove it from the site. Deletes are permanent and
-            clear the news index, homepage, and this list immediately.
+            Hide a story to pull it off the public site while keeping it here,
+            or delete it permanently. Either way the news index, homepage, and
+            this list update immediately.
           </p>
         </div>
       </header>
@@ -84,6 +100,7 @@ export default async function AdminArticlesPage() {
         <div className="-mt-6">
           <p className="mb-3 text-sm font-medium text-zinc-400">
             {articles.length} article{articles.length === 1 ? "" : "s"}
+            {hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ""}
           </p>
 
           {articles.length === 0 ? (
@@ -98,11 +115,21 @@ export default async function AdminArticlesPage() {
               {articles.map((article) => (
                 <li
                   key={article.id}
-                  className="flex flex-col gap-4 rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:border-zinc-700/80 sm:flex-row sm:items-center sm:justify-between"
+                  className={`flex flex-col gap-4 rounded-2xl border p-5 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:border-zinc-700/80 sm:flex-row sm:items-center sm:justify-between ${
+                    article.is_published
+                      ? "border-zinc-800/50 bg-zinc-900/40"
+                      : "border-zinc-800/40 bg-zinc-900/20 opacity-70"
+                  }`}
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <CategoryBadge category={article.category} />
+                      {!article.is_published ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                          <EyeOff className="h-3 w-3" />
+                          Hidden
+                        </span>
+                      ) : null}
                       <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
                         <Calendar className="h-3.5 w-3.5" />
                         {formatArticleDate(article.created_at)}
@@ -116,7 +143,12 @@ export default async function AdminArticlesPage() {
                     </Link>
                   </div>
 
-                  <div className="flex shrink-0 items-start gap-2">
+                  <div className="flex shrink-0 flex-wrap items-start gap-2">
+                    <ArticleVisibilityToggle
+                      id={article.id}
+                      title={article.title ?? "Untitled"}
+                      isPublished={article.is_published}
+                    />
                     <Link
                       href={`/admin/articles/edit/${article.id}`}
                       className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white transition-all duration-300 ease-out hover:border-gold-500 hover:text-amber-400 active:scale-[0.98]"

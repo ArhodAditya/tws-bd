@@ -61,6 +61,47 @@ export async function deleteArticle(id: string): Promise<ActionResult> {
   return { success: true };
 }
 
+// Flip a news article's editorial visibility — the soft delete. Routed through
+// the service-role client for the same reason as updateArticle: articles RLS
+// scopes UPDATE to the author, so an admin hiding *another* author's post would
+// match zero rows and get back `error: null`, i.e. a silent no-op. Admin status
+// is re-verified above because Server Actions are reachable via direct POST.
+export async function setArticlePublished(
+  id: string,
+  published: boolean
+): Promise<ActionResult> {
+  const gate = await requireAdmin();
+  if (!gate.success) return gate;
+
+  const admin = createAdminClient();
+  // Returning the slug does double duty: it lets us flush this article's own
+  // page below, and detect a 0-row update instead of reporting a false success.
+  const { data, error } = await admin
+    .from("articles")
+    .update({ is_published: published })
+    .eq("id", id)
+    .select("slug");
+
+  if (error) return { success: false, message: error.message };
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      message: "No article was updated — it may have been removed.",
+    };
+  }
+
+  // Flush every surface the article appears on so the change lands immediately:
+  // the news index, the homepage teaser, the article's own page (hiding it must
+  // start 404ing at once), and the admin list.
+  revalidatePath("/news");
+  revalidatePath("/");
+  const slug = data[0]?.slug;
+  if (slug) revalidatePath(`/news/${slug}`);
+  revalidatePath("/news/[slug]", "page");
+  revalidatePath("/admin/articles");
+  return { success: true };
+}
+
 export type UpdateArticleInput = {
   id: string;
   title: string;

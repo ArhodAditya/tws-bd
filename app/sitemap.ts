@@ -57,13 +57,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     auth: { persistSession: false },
   });
 
-  // Articles: every published article with a slug. Products: only active ones
-  // (matches the storefront's is_active filter). A failed query yields null and
-  // degrades gracefully to the static routes.
+  // Articles: every published article with a slug (is_published mirrors the
+  // news feed's filter, so a hidden story drops out of the sitemap too).
+  // Products: only active ones (matches the storefront's is_active filter). A
+  // failed query yields null and degrades gracefully to the static routes.
   const [{ data: articles }, { data: products }] = await Promise.all([
     supabase
       .from("articles")
       .select("slug, created_at")
+      .eq("is_published", true)
       .not("slug", "is", null)
       .order("created_at", { ascending: false }),
     supabase

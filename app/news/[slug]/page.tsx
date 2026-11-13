@@ -2,12 +2,13 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Newspaper, Pencil } from "lucide-react";
+import { ArrowLeft, Calendar, EyeOff, Newspaper, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import {
   MOCK_ARTICLES,
@@ -35,6 +36,17 @@ const articleSchema = {
   },
 };
 
+// Is the current viewer an admin? cache()d because both getArticle (to decide
+// whether a hidden article is viewable) and the page body (the Edit link) need
+// it, and neither should pay twice for the auth + role round-trips.
+const getViewerIsAdmin = cache(async (): Promise<boolean> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user ? isCurrentUserAdmin(supabase) : false;
+});
+
 // Fetch a single article by slug, falling back to sample content. Wrapped in
 // React's cache() so generateMetadata and the page share one query per request.
 const getArticle = cache(
@@ -46,7 +58,28 @@ const getArticle = cache(
       .eq("slug", slug)
       .maybeSingle();
 
-    if (data) return data;
+    if (data) {
+      // The articles SELECT policy already withholds hidden rows from the
+      // public, so this guard is belt and braces: it keeps the page correct if
+      // the RLS migration hasn't been applied yet, or if that policy is ever
+      // loosened. Pre-RLS an admin lands here directly; post-RLS they fall
+      // through to the service-role re-read below.
+      if (!data.is_published && !(await getViewerIsAdmin())) return null;
+      return data;
+    }
+
+    // A miss may still be a hidden article, which only an admin may preview at
+    // its real URL. Re-read with the service-role client, strictly behind the
+    // role check — the public path above never reaches this.
+    if (await getViewerIsAdmin()) {
+      const { data: hidden } = await createAdminClient()
+        .from("articles")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (hidden) return hidden;
+    }
+
     return MOCK_ARTICLES.find((article) => article.slug === slug) ?? null;
   },
 );
@@ -104,13 +137,12 @@ export default async function ArticlePage({
 
   // Admin convenience: show an "Edit" link, but only for real DB-backed
   // articles (the sample/mock fallbacks aren't editable).
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const isAdmin = user ? await isCurrentUserAdmin(supabase) : false;
+  const isAdmin = await getViewerIsAdmin();
   const canEdit =
     isAdmin && !MOCK_ARTICLES.some((mock) => mock.id === article.id);
+  // Only an admin can reach a hidden article, so flag why it looks live here
+  // but is missing from the public news feed.
+  const showHiddenNotice = canEdit && !article.is_published;
 
   const content = (article.content ?? "").trim();
 
@@ -167,6 +199,15 @@ export default async function ArticlePage({
               <Calendar className="h-4 w-4" />
               {formatArticleDate(article.created_at)}
             </span>
+            {showHiddenNotice ? (
+              <span
+                title="Hidden from the public news feed — only admins can see this page."
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 font-semibold text-zinc-300"
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+                Hidden
+              </span>
+            ) : null}
             {canEdit ? (
               <Link
                 href={`/admin/articles/edit/${article.id}`}

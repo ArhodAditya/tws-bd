@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import EditArticleForm from "@/components/EditArticleForm";
 import type { Article } from "@/lib/articles";
@@ -34,7 +35,9 @@ export default async function EditArticlePage({
   }
 
   // Only real DB rows are editable — the sample/mock articles aren't stored.
-  const { data: article } = await supabase
+  // Service-role client so a hidden article still opens in the editor (the
+  // SELECT policy only exposes published rows). The page is gated above.
+  const { data: article } = await createAdminClient()
     .from("articles")
     .select("*")
     .eq("id", id)

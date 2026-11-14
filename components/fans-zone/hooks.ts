@@ -42,6 +42,5 @@ export function useMediaQuery(query: string): boolean {
   );
 }
 
-// Tailwind's `sm` and `lg`, as media queries.
-export const MQ_SM = "(min-width: 40rem)";
+// Tailwind's `lg`, as a media query.
 export const MQ_LG = "(min-width: 64rem)";

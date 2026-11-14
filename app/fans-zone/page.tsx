@@ -3,6 +3,12 @@ import Link from "next/link";
 import { ArrowRight, MessagesSquare, ShieldHalf, Sparkles, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { type FanReviewWithAuthor } from "@/lib/fan-reviews";
+import {
+  CAMPAIGN_SUMMARY_COLUMNS,
+  FALLBACK_CAMPAIGNS,
+  type CampaignSource,
+  type UclCampaignSummary,
+} from "@/lib/ucl-campaigns";
 import Reveal from "@/components/Reveal";
 import FanReviewCard from "@/components/FanReviewCard";
 import FanReviewForm from "@/components/FanReviewForm";
@@ -11,24 +17,42 @@ import ReyesDeEuropa from "@/components/fans-zone/ReyesDeEuropa";
 export const metadata: Metadata = {
   title: "Fans Zone — The Whites Stories",
   description:
-    "The command center for Madridistas in Bangladesh — explore the map of Real Madrid's 15 European Cup triumphs, build your dream XI, and add your voice. ¡Hala Madrid!",
+    "The command center for Madridistas in Bangladesh — spin the globe through Real Madrid's European Cup triumphs, build your dream XI, and add your voice. ¡Hala Madrid!",
 };
 
 export default async function FansZonePage() {
   const supabase = await createClient();
 
-  // Approved fan reviews power the "Voices of the Madridistas" wall, newest
-  // first. RLS only ever returns approved rows here; if the table is missing
-  // this errors and `data` is null — the section then shows its empty state.
-  const { data: reviewData } = await supabase
-    .from("fan_reviews")
-    .select("*, profiles(full_name, avatar_url)")
-    .eq("is_approved", true)
-    .order("created_at", { ascending: false })
-    .limit(12);
+  // Both reads are independent, so they go out together.
+  const [{ data: reviewData }, { data: campaignRows }] = await Promise.all([
+    // Approved fan reviews power the "Voices of the Madridistas" wall, newest
+    // first. RLS only ever returns approved rows here; if the table is missing
+    // this errors and `data` is null — the section then shows its empty state.
+    supabase
+      .from("fan_reviews")
+      .select("*, profiles(full_name, avatar_url)")
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(12),
+    // The campaigns behind the "Reyes de Europa" globe — every column except
+    // the long-form history, which the panel fetches for one campaign at a
+    // time. Managed at /admin/ucl-history.
+    supabase
+      .from("ucl_campaigns")
+      .select(CAMPAIGN_SUMMARY_COLUMNS)
+      .order("year", { ascending: true }),
+  ]);
 
   const reviews: FanReviewWithAuthor[] =
     (reviewData as FanReviewWithAuthor[] | null) ?? [];
+
+  // If the table is missing (the migration is applied by hand), unreadable or
+  // empty, show the built-in copy of the fifteen titles instead of nothing.
+  const fromDatabase = campaignRows !== null && campaignRows.length > 0;
+  const campaigns: readonly UclCampaignSummary[] = fromDatabase
+    ? campaignRows
+    : FALLBACK_CAMPAIGNS;
+  const campaignSource: CampaignSource = fromDatabase ? "database" : "fallback";
 
   return (
     <div className="relative overflow-hidden bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-white">
@@ -55,9 +79,9 @@ export default async function FansZonePage() {
           </p>
         </header>
 
-        {/* Reyes de Europa — the interactive map of all fifteen titles */}
+        {/* Reyes de Europa — the interactive globe of every European Cup */}
         <div className="mt-10 animate-in fade-in slide-in-from-bottom-8 delay-150 duration-700 ease-out fill-mode-both lg:mt-12">
-          <ReyesDeEuropa />
+          <ReyesDeEuropa campaigns={campaigns} source={campaignSource} />
         </div>
 
         {/* Squad Builder CTA */}

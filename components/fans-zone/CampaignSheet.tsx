@@ -9,10 +9,10 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { useHydrated } from "./hooks";
-import { CloseButton } from "./TitleDetail";
+import { CloseButton } from "./CampaignPanel";
 
-// Bottom-sheet shell for the title detail on phones and tablets — the mobile
-// counterpart of the floating desktop card. A real modal: it portals to <body>
+// Bottom-sheet shell for the campaign panel on phones and tablets — the mobile
+// counterpart of the desktop glass sidebar. A real modal: it portals to <body>
 // (so no transformed ancestor can re-anchor `position: fixed`), dims and locks
 // the page behind it, traps focus, and closes on the X, a tap outside, Escape,
 // or a downward flick of the handle.
@@ -20,28 +20,35 @@ import { CloseButton } from "./TitleDetail";
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-interface TitleSheetProps {
+interface CampaignSheetProps {
   open: boolean;
   onClose: () => void;
   /** id of the heading inside `children` that names the dialog. */
   labelledBy: string;
+  /** Changes when the content does — the sheet scrolls back to the top. */
+  contentKey: string | null;
+  /** Pinned under the scrolling content (the previous / next stepper). */
+  footer?: ReactNode;
   /** Extra classes for the portal root — it sits outside the section, so
       anything inherited (the display font variable) has to be passed in. */
   className?: string;
   children: ReactNode;
 }
 
-export default function TitleSheet({
+export default function CampaignSheet({
   open,
   onClose,
   labelledBy,
+  contentKey,
+  footer,
   className = "",
   children,
-}: TitleSheetProps) {
+}: CampaignSheetProps) {
   const hydrated = useHydrated();
   const reduceMotion = useReducedMotion() ?? false;
   const dragControls = useDragControls();
   const sheetRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   // Read through an Effect Event so the effect below depends on `open` alone:
   // a new `onClose` identity must never re-run it (that would bounce focus).
@@ -97,10 +104,15 @@ export default function TitleSheet({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
-      // Only if the opener is still on the page (a map tap has none).
+      // Only if the opener is still on the page (a tap on the globe has none).
       if (opener && opener.isConnected) opener.focus({ preventScroll: true });
     };
   }, [open]);
+
+  // A new campaign starts at its photo, not wherever the last one was left.
+  useEffect(() => {
+    scrollerRef.current?.scrollTo({ top: 0 });
+  }, [contentKey]);
 
   // Portals need `document`; rendering nothing until hydration keeps the
   // server and first client render identical.
@@ -109,7 +121,7 @@ export default function TitleSheet({
   return createPortal(
     <AnimatePresence>
       {open ? (
-        <div key="title-sheet" className={`fixed inset-0 z-[60] ${className}`}>
+        <div key="campaign-sheet" className={`fixed inset-0 z-[60] ${className}`}>
           <motion.div
             aria-hidden
             onClick={onClose}
@@ -152,7 +164,7 @@ export default function TitleSheet({
             // slight overshoot never opens a gap under the sheet.
             className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-xl outline-none after:absolute after:inset-x-0 after:top-full after:h-24 after:bg-[#0b0e16]"
           >
-            <div className="glass-panel edge-gold relative flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[28px] shadow-[0_-30px_80px_-20px_rgba(0,0,0,0.9)]">
+            <div className="glass-panel edge-gold relative flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] shadow-[0_-30px_80px_-20px_rgba(0,0,0,0.9)]">
               {/* Grab handle — the drag surface. */}
               <div
                 aria-hidden
@@ -164,9 +176,16 @@ export default function TitleSheet({
 
               <CloseButton onClick={onClose} />
 
-              <div className="overflow-y-auto overscroll-contain pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <div
+                ref={scrollerRef}
+                className="scroll-gold min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6"
+              >
                 {children}
               </div>
+
+              {footer ? (
+                <div className="pb-[env(safe-area-inset-bottom)]">{footer}</div>
+              ) : null}
             </div>
           </motion.div>
         </div>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, MapPin, X } from "lucide-react";
 import {
+  campaignImages,
   describeScoreNote,
   parseScore,
   splitRoute,
@@ -12,12 +12,20 @@ import {
   type UclCampaignSummary,
 } from "@/lib/ucl-campaigns";
 import CampaignHistory from "./CampaignHistory";
+import {
+  GalleryBanner,
+  GalleryLightbox,
+  GalleryThumbs,
+  useLoadablePhotos,
+  type PhotoPosition,
+} from "./CampaignGallery";
 
-// The deep dive on one campaign: the photo of the final, the headline facts,
-// the road there, and the long-form history. Rendered inside the glass sidebar
-// on desktop and the bottom sheet on smaller screens — the two shells differ,
-// the content doesn't. Each shell supplies the scrolling container, the close
-// button and the stepper (exported below) so those stay put while this scrolls.
+// The deep dive on one campaign: its photo gallery, the headline facts, the
+// road to the final, and the long-form history. Rendered inside the glass
+// sidebar on desktop and the bottom sheet on smaller screens — the two shells
+// differ, the content doesn't. Each shell supplies the scrolling container,
+// the close button and the stepper (exported below) so those stay put while
+// this scrolls.
 
 const ROMAN_NUMERALS: ReadonlyArray<readonly [number, string]> = [
   [1000, "M"],
@@ -66,23 +74,10 @@ export interface CampaignPanelProps {
   onSelect: (campaign: UclCampaignSummary) => void;
 }
 
-export default function CampaignPanel({
-  campaign,
-  number,
-  total,
-  siblings,
-  headingId,
-  variant,
-  source,
-  onSelect,
-}: CampaignPanelProps) {
+export default function CampaignPanel(props: CampaignPanelProps) {
+  const { campaign, onSelect } = props;
   const reduceMotion = useReducedMotion() ?? false;
   const rootRef = useRef<HTMLDivElement>(null);
-  const isSheet = variant === "sheet";
-  const score = parseScore(campaign.score);
-  const numeral = toRoman(number);
-  const rounds = splitRoute(campaign.route);
-  const gutter = isSheet ? "px-6 sm:px-8" : "px-7";
 
   // Jumping to a sibling removes the very button that was pressed (it names
   // the campaign now on show), so park focus on the panel instead of letting
@@ -95,6 +90,8 @@ export default function CampaignPanel({
   return (
     <div ref={rootRef} tabIndex={-1} className="relative outline-none">
       <AnimatePresence mode="wait" initial={false}>
+        {/* Keyed by campaign: the body below is a fresh instance each time, so
+            its gallery starts again at the cover photo. */}
         <motion.div
           key={campaign.id}
           initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
@@ -102,157 +99,234 @@ export default function CampaignPanel({
           exit={{ opacity: 0, y: reduceMotion ? 0 : -8 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Hero banner. The mask dissolves it into the glass below, so there
-              is no seam between the photo and the translucent panel. */}
-          <div className={`relative ${isSheet ? "h-52 sm:h-64" : "h-60"}`}>
-            <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,#000_48%,transparent)]">
-              <Plate
-                numeral={numeral}
-                sizeClass={isSheet ? "text-[9rem] sm:text-[11rem]" : "text-[9.5rem]"}
-              />
-              {campaign.image_url ? (
-                <CampaignPhoto
-                  src={campaign.image_url}
-                  alt={`Real Madrid at the ${campaign.year} final in ${campaign.city}`}
-                  sizes={isSheet ? "(min-width: 36rem) 36rem, 100vw" : "28rem"}
-                />
-              ) : null}
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-[linear-gradient(to_right,rgba(8,10,16,0.55),transparent_60%)]"
-              />
-            </div>
-            <p className="absolute left-7 top-6 font-mono text-[10px] uppercase tracking-[0.34em] text-[#F1DD96]">
-              <span aria-hidden>
-                {numeral}
-                <span className="px-1.5 text-white/35">/</span>
-                {toRoman(total)}
-              </span>
-              <span className="sr-only">
-                Title {number} of {total}
-              </span>
-            </p>
-          </div>
-
-          <div className={`relative -mt-[4.25rem] ${gutter}`}>
-            <h3 id={headingId}>
-              {/* pr gives the italic's overhang room inside the gradient clip. */}
-              <span
-                className={`text-gradient-gold inline-block pr-[0.14em] font-regal italic leading-[0.88] ${
-                  isSheet ? "text-[5rem] sm:text-[6rem]" : "text-[5.75rem]"
-                }`}
-              >
-                {campaign.year}
-              </span>{" "}
-              <span className="mt-2.5 block font-regal text-[2rem] italic leading-[1.08] text-white">
-                {campaign.title}
-              </span>
-            </h3>
-
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-              <p className="inline-flex items-center gap-1.5 font-regal text-[1.4rem] italic leading-none text-[#F1DD96]">
-                <MapPin aria-hidden className="h-4 w-4 shrink-0 text-[#D4AF37]" />
-                {campaign.city}
-              </p>
-              {siblings.length > 0 ? (
-                <p className="flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.2em] text-zinc-400">
-                  <span aria-hidden className="text-white/25">
-                    ·
-                  </span>
-                  <span>also</span>
-                  {siblings.map((sibling) => (
-                    <button
-                      key={sibling.id}
-                      type="button"
-                      onClick={() => selectSibling(sibling)}
-                      aria-label={`Also won in ${campaign.city}: ${sibling.year}, ${sibling.title}`}
-                      className={`rounded-full border border-white/15 px-2.5 py-1.5 tabular-nums tracking-[0.12em] text-zinc-200 transition-colors hover:border-[#D4AF37]/70 hover:text-[#F1DD96] ${FOCUS_RING}`}
-                    >
-                      {sibling.year}
-                    </button>
-                  ))}
-                </p>
-              ) : null}
-            </div>
-
-            {/* The final */}
-            <section className="mt-7">
-              <SectionLabel>The final</SectionLabel>
-              {score ? (
-                <>
-                  <dl className="mt-3 space-y-1">
-                    <div className="flex items-baseline justify-between gap-4">
-                      <dt className="text-base font-semibold text-white">
-                        Real Madrid
-                      </dt>
-                      <dd className="font-display text-[1.75rem] font-extrabold leading-none tabular-nums text-white">
-                        {score.madrid}
-                      </dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-4">
-                      <dt className="text-base text-zinc-400">{campaign.opponent}</dt>
-                      <dd className="font-display text-[1.75rem] font-bold leading-none tabular-nums text-zinc-500">
-                        {score.opponent}
-                      </dd>
-                    </div>
-                  </dl>
-                  {score.note ? (
-                    <p className="mt-2.5 text-sm text-[#F1DD96]">
-                      {describeScoreNote(score.note)}
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                // Scores are free text in the CMS — print an unusual one as written.
-                <p className="mt-3 text-base text-zinc-200">
-                  Real Madrid {campaign.score} {campaign.opponent}
-                </p>
-              )}
-            </section>
-
-            {campaign.heroes ? (
-              <section className="mt-7">
-                <SectionLabel>Heroes</SectionLabel>
-                <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-zinc-200">
-                  {campaign.heroes}
-                </p>
-              </section>
-            ) : null}
-
-            {rounds.length > 0 ? (
-              <section className="mt-7">
-                <SectionLabel>Road to the final</SectionLabel>
-                <ol className="mt-4 space-y-3.5 border-l border-white/10 pl-5">
-                  {rounds.map((round, index) => (
-                    <RouteStep key={`${index}-${round}`} text={round} />
-                  ))}
-                  <RouteStep
-                    final
-                    text={`Final: ${campaign.opponent}, ${
-                      score
-                        ? `${score.madrid}–${score.opponent}${
-                            score.note
-                              ? ` (${describeScoreNote(score.note).toLowerCase()})`
-                              : ""
-                          }`
-                        : campaign.score
-                    }`}
-                  />
-                </ol>
-              </section>
-            ) : null}
-
-            {/* The long read */}
-            <section className="mt-8 border-t border-white/[0.08] pb-2 pt-7">
-              <SectionLabel>The story</SectionLabel>
-              <div className="mt-4">
-                <CampaignHistory campaign={campaign} source={source} />
-              </div>
-            </section>
-          </div>
+          <PanelBody {...props} onSelectSibling={selectSibling} />
         </motion.div>
       </AnimatePresence>
     </div>
+  );
+}
+
+function PanelBody({
+  campaign,
+  number,
+  total,
+  siblings,
+  headingId,
+  variant,
+  source,
+  onSelectSibling,
+}: CampaignPanelProps & {
+  onSelectSibling: (campaign: UclCampaignSummary) => void;
+}) {
+  const isSheet = variant === "sheet";
+  const score = parseScore(campaign.score);
+  const numeral = toRoman(number);
+  const rounds = splitRoute(campaign.route);
+  const gutter = isSheet ? "px-6 sm:px-8" : "px-7";
+
+  // --- Gallery --------------------------------------------------------------
+  // One position, shared by the banner, the thumbnails and the full-screen
+  // viewer, so stepping in any of them moves all three.
+  const uploaded = useMemo(() => campaignImages(campaign), [campaign]);
+  const images = useLoadablePhotos(uploaded);
+  const [place, setPosition] = useState<PhotoPosition>({
+    index: 0,
+    direction: 0,
+  });
+  // The list gets shorter if a photo turns out not to load.
+  const position: PhotoPosition = {
+    index: Math.min(place.index, Math.max(0, images.length - 1)),
+    direction: place.direction,
+  };
+  const [viewerOpen, setViewerOpen] = useState(false);
+
+  const stepPhoto = (delta: -1 | 1) =>
+    setPosition({
+      index: (position.index + delta + images.length) % images.length,
+      direction: delta,
+    });
+  const showPhoto = (index: number) => {
+    if (index === position.index) return;
+    setPosition({ index, direction: index > position.index ? 1 : -1 });
+  };
+
+  const scene = `Real Madrid at the ${campaign.year} final in ${campaign.city}`;
+  const describePhoto = (index: number) =>
+    images.length > 1
+      ? `Photo ${index + 1} of ${images.length}: ${scene}`
+      : scene;
+
+  return (
+    <>
+      {/* Hero: the photo carousel, or the numeral plate until photos exist. */}
+      <div className={`relative ${isSheet ? "h-52 sm:h-64" : "h-60"}`}>
+        <GalleryBanner
+          images={images}
+          position={position}
+          describe={describePhoto}
+          sizes={isSheet ? "(min-width: 36rem) 36rem, 100vw" : "28rem"}
+          plate={
+            <Plate
+              numeral={numeral}
+              sizeClass={isSheet ? "text-[9rem] sm:text-[11rem]" : "text-[9.5rem]"}
+            />
+          }
+          onStep={stepPhoto}
+          onOpen={() => setViewerOpen(true)}
+        />
+        <p className="pointer-events-none absolute left-7 top-6 font-mono text-[10px] uppercase tracking-[0.34em] text-[#F1DD96] [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">
+          <span aria-hidden>
+            {numeral}
+            <span className="px-1.5 text-white/35">/</span>
+            {toRoman(total)}
+          </span>
+          <span className="sr-only">
+            Title {number} of {total}
+          </span>
+        </p>
+      </div>
+
+      {/* flow-root, so the headline's negative margin lifts the headline alone
+          and this box still starts where the photo ends. */}
+      <div className={`relative flow-root ${gutter}`}>
+        {/* The year rides up over the photo, but must not swallow the taps
+            and swipes meant for it. */}
+        <h3 id={headingId} className="pointer-events-none -mt-[4.25rem]">
+          {/* pr gives the italic's overhang room inside the gradient clip. */}
+          <span
+            className={`text-gradient-gold inline-block pr-[0.14em] font-regal italic leading-[0.88] ${
+              isSheet ? "text-[5rem] sm:text-[6rem]" : "text-[5.75rem]"
+            }`}
+          >
+            {campaign.year}
+          </span>{" "}
+          <span className="pointer-events-auto mt-2.5 block font-regal text-[2rem] italic leading-[1.08] text-white">
+            {campaign.title}
+          </span>
+        </h3>
+
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+          <p className="inline-flex items-center gap-1.5 font-regal text-[1.4rem] italic leading-none text-[#F1DD96]">
+            <MapPin aria-hidden className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+            {campaign.city}
+          </p>
+          {siblings.length > 0 ? (
+            <p className="flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.2em] text-zinc-400">
+              <span aria-hidden className="text-white/25">
+                ·
+              </span>
+              <span>also</span>
+              {siblings.map((sibling) => (
+                <button
+                  key={sibling.id}
+                  type="button"
+                  onClick={() => onSelectSibling(sibling)}
+                  aria-label={`Also won in ${campaign.city}: ${sibling.year}, ${sibling.title}`}
+                  className={`rounded-full border border-white/15 px-2.5 py-1.5 tabular-nums tracking-[0.12em] text-zinc-200 transition-colors hover:border-[#D4AF37]/70 hover:text-[#F1DD96] ${FOCUS_RING}`}
+                >
+                  {sibling.year}
+                </button>
+              ))}
+            </p>
+          ) : null}
+        </div>
+
+        {images.length > 1 ? (
+          <GalleryThumbs
+            images={images}
+            index={position.index}
+            onSelect={showPhoto}
+            className="-mx-1 mt-5"
+          />
+        ) : null}
+
+        {/* The final */}
+        <section className="mt-7">
+          <SectionLabel>The final</SectionLabel>
+          {score ? (
+            <>
+              <dl className="mt-3 space-y-1">
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-base font-semibold text-white">
+                    Real Madrid
+                  </dt>
+                  <dd className="font-display text-[1.75rem] font-extrabold leading-none tabular-nums text-white">
+                    {score.madrid}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-base text-zinc-400">{campaign.opponent}</dt>
+                  <dd className="font-display text-[1.75rem] font-bold leading-none tabular-nums text-zinc-500">
+                    {score.opponent}
+                  </dd>
+                </div>
+              </dl>
+              {score.note ? (
+                <p className="mt-2.5 text-sm text-[#F1DD96]">
+                  {describeScoreNote(score.note)}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            // Scores are free text in the CMS — print an unusual one as written.
+            <p className="mt-3 text-base text-zinc-200">
+              Real Madrid {campaign.score} {campaign.opponent}
+            </p>
+          )}
+        </section>
+
+        {campaign.heroes ? (
+          <section className="mt-7">
+            <SectionLabel>Heroes</SectionLabel>
+            <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-zinc-200">
+              {campaign.heroes}
+            </p>
+          </section>
+        ) : null}
+
+        {rounds.length > 0 ? (
+          <section className="mt-7">
+            <SectionLabel>Road to the final</SectionLabel>
+            <ol className="mt-4 space-y-3.5 border-l border-white/10 pl-5">
+              {rounds.map((round, index) => (
+                <RouteStep key={`${index}-${round}`} text={round} />
+              ))}
+              <RouteStep
+                final
+                text={`Final: ${campaign.opponent}, ${
+                  score
+                    ? `${score.madrid}–${score.opponent}${
+                        score.note
+                          ? ` (${describeScoreNote(score.note).toLowerCase()})`
+                          : ""
+                      }`
+                    : campaign.score
+                }`}
+              />
+            </ol>
+          </section>
+        ) : null}
+
+        {/* The long read */}
+        <section className="mt-8 border-t border-white/[0.08] pb-2 pt-7">
+          <SectionLabel>The story</SectionLabel>
+          <div className="mt-4">
+            <CampaignHistory campaign={campaign} source={source} />
+          </div>
+        </section>
+      </div>
+
+      <GalleryLightbox
+        open={viewerOpen && images.length > 0}
+        images={images}
+        position={position}
+        caption={`${campaign.year} · ${campaign.title} · ${campaign.city}`}
+        describe={describePhoto}
+        onStep={stepPhoto}
+        onSelect={showPhoto}
+        onClose={() => setViewerOpen(false)}
+      />
+    </>
   );
 }
 
@@ -378,46 +452,7 @@ function RouteStep({ text, final = false }: { text: string; final?: boolean }) {
   );
 }
 
-// Photos that failed to load this session. Remembered so reopening a campaign
-// doesn't re-request a file that isn't there.
-const missingPhotos = new Set<string>();
-
-// The photo cross-fades in over the plate once it has loaded, and simply never
-// appears if it can't — so a missing or slow image is never a broken one.
-function CampaignPhoto({
-  src,
-  alt,
-  sizes,
-}: {
-  src: string;
-  alt: string;
-  sizes: string;
-}) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "missing">(() =>
-    missingPhotos.has(src) ? "missing" : "loading"
-  );
-
-  if (status === "missing") return null;
-
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      sizes={sizes}
-      onLoad={() => setStatus("loaded")}
-      onError={() => {
-        missingPhotos.add(src);
-        setStatus("missing");
-      }}
-      className={`object-cover saturate-[0.9] transition-opacity duration-700 ${
-        status === "loaded" ? "opacity-100" : "opacity-0"
-      }`}
-    />
-  );
-}
-
-// What stands behind the photo, and in for it until one is uploaded: a
+// What stands behind the photos, and in for them until some are uploaded: a
 // floodlit plate engraved with the title's regnal numeral.
 function Plate({
   numeral,

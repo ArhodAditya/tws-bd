@@ -16,7 +16,11 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
 import DeleteCampaignButton from "@/components/DeleteCampaignButton";
-import { countWords, type UclCampaign } from "@/lib/ucl-campaigns";
+import {
+  campaignImages,
+  countWords,
+  type UclCampaign,
+} from "@/lib/ucl-campaigns";
 
 export const metadata: Metadata = {
   title: "UCL History — Admin — The Whites Stories",
@@ -158,6 +162,7 @@ export default async function AdminUclHistoryPage() {
                 <ul className="space-y-3">
                   {campaigns.map((campaign) => {
                     const words = countWords(campaign.detailed_history);
+                    const photos = campaignImages(campaign).length;
                     return (
                       <li
                         key={campaign.id}
@@ -198,13 +203,15 @@ export default async function AdminUclHistoryPage() {
                               </span>
                               <span
                                 className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${
-                                  campaign.image_url
+                                  photos > 0
                                     ? "border-pitch-500/30 bg-pitch-500/10 text-pitch-300"
                                     : "border-white/10 bg-white/5 text-zinc-500"
                                 }`}
                               >
                                 <ImageIcon className="h-3 w-3" />
-                                {campaign.image_url ? "Photo added" : "No photo"}
+                                {photos === 0
+                                  ? "No photos"
+                                  : `${photos} photo${photos === 1 ? "" : "s"}`}
                               </span>
                             </div>
                           </div>

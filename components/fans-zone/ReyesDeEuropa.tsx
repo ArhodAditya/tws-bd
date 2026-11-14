@@ -110,8 +110,12 @@ export default function ReyesDeEuropa({
   const reduceMotion = useReducedMotion() ?? false;
 
   const sectionRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sidebarSlotRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  // How much of the stage's right-hand side the story column covers, in px.
+  const [panelInset, setPanelInset] = useState(0);
   // Set when the sidebar is opened from a control that the sidebar then covers.
   const focusSidebarOnOpen = useRef(false);
 
@@ -198,6 +202,25 @@ export default function ReyesDeEuropa({
     sidebarScrollRef.current?.scrollTo({ top: 0 });
   }, [activeId]);
 
+  // Measure the sidebar's footprint from an invisible stand-in that shares its
+  // classes, so the figure is right at every breakpoint and font size without
+  // the sidebar having to be open. The globe is centred in what remains.
+  useEffect(() => {
+    const stage = stageRef.current;
+    const slot = sidebarSlotRef.current;
+    if (!stage || !slot) return;
+
+    const measure = () =>
+      setPanelInset(
+        // offsetParent is null while the slot is display: none (below `lg`).
+        slot.offsetParent === null ? 0 : stage.clientWidth - slot.offsetLeft
+      );
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(slot);
+    return () => observer.disconnect();
+  }, []);
+
   if (titles.length === 0) return null;
 
   const firstTitle = titles[0];
@@ -239,9 +262,17 @@ export default function ReyesDeEuropa({
       className={`${regal.variable} relative`}
     >
       <div
+        ref={stageRef}
         data-active={sidebarOpen}
         className="group/stage relative isolate overflow-hidden rounded-[28px] bg-[#06080d] text-zinc-100 shadow-[0_40px_90px_-50px_rgba(6,11,34,0.75)] ring-1 ring-white/[0.08] lg:h-[680px] xl:h-[720px]"
       >
+        {/* Stand-in for the sidebar — same box, never visible. See the
+            measuring effect above; keep these classes in step with it. */}
+        <div
+          ref={sidebarSlotRef}
+          aria-hidden
+          className="pointer-events-none invisible absolute bottom-[5.75rem] right-5 top-5 hidden w-[25rem] lg:block xl:w-[28rem]"
+        />
         {/* Atmosphere: a low gold glow behind the globe. */}
         <div
           aria-hidden
@@ -304,7 +335,7 @@ export default function ReyesDeEuropa({
               previousLocation={previousLocation}
               currentLocation={currentLocation}
               highlightedSite={highlightedSite}
-              offsetForPanel={isDesktop}
+              panelInset={panelInset}
               paused={sheetOpen}
               onSelectSite={selectSite}
               onHighlightSite={setHighlightedSite}

@@ -3,10 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, EyeOff, Newspaper, Pencil } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin";
@@ -20,21 +16,9 @@ import { SITE_LOGO, SITE_NAME, SITE_URL } from "@/lib/site";
 import { AuthorMeta, CategoryBadge } from "@/components/NewsCard";
 import { FacebookIcon, XIcon } from "@/components/BrandIcons";
 import JsonLd from "@/components/JsonLd";
+import SafeMarkdown from "@/components/SafeMarkdown";
 
 type ArticleParams = { slug: string };
-
-// Sanitize schema for the raw HTML that rehype-raw parses out of admin article
-// Markdown. Keeps the default (safe) tag + URL-protocol allowlist — which drops
-// <script>, event-handler attributes and javascript: URLs — but re-permits
-// `className` and `style` so the intentional inline-styled accent spans still
-// render. rehype-sanitize runs AFTER rehype-raw so it scrubs the parsed HTML.
-const articleSchema = {
-  ...defaultSchema,
-  attributes: {
-    ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style"],
-  },
-};
 
 // Is the current viewer an admin? cache()d because both getArticle (to decide
 // whether a hidden article is viewable) and the page body (the Edit link) need
@@ -267,15 +251,8 @@ export default async function ArticlePage({
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 md:py-12 lg:px-8">
         {content ? (
           <div className="prose max-w-none prose-zinc text-justify hyphens-auto font-['Times_New_Roman',_Times,_serif] md:prose-lg dark:prose-invert prose-headings:text-left prose-headings:font-display prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-700 dark:prose-p:text-zinc-400 prose-li:text-zinc-700 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-white prose-a:font-medium prose-a:text-amber-600 hover:prose-a:text-amber-500 dark:prose-a:text-amber-400 dark:hover:prose-a:text-amber-300 prose-blockquote:border-amber-400/40 prose-blockquote:text-zinc-600 dark:prose-blockquote:text-zinc-300 prose-img:my-8 prose-img:w-full prose-img:rounded-xl prose-img:border prose-img:border-zinc-200 dark:prose-img:border-zinc-800/50 prose-img:shadow-2xl">
-            {/* remark-breaks turns a single newline (Enter in the editor) into a
-                hard <br>, so line breaks the admin types render on the live site
-                instead of being collapsed into a space by standard Markdown. */}
-            <ReactMarkdown
-              remarkPlugins={[remarkBreaks]}
-              rehypePlugins={[rehypeRaw, [rehypeSanitize, articleSchema]]}
-            >
-              {content}
-            </ReactMarkdown>
+            {/* Markdown → sanitised HTML; see SafeMarkdown for the policy. */}
+            <SafeMarkdown>{content}</SafeMarkdown>
           </div>
         ) : (
           <p className="text-zinc-500">Full story coming soon.</p>

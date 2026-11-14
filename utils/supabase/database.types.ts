@@ -416,6 +416,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      ucl_campaigns: {
+        // One row per European Cup / Champions League title. `year` is unique.
+        // Public read; writes go through admin Server Actions (service role).
+        Row: {
+          city: string;
+          created_at: string;
+          detailed_history: string | null;
+          heroes: string | null;
+          id: string;
+          image_url: string | null;
+          lat: number;
+          lng: number;
+          opponent: string;
+          route: string | null;
+          score: string;
+          title: string;
+          updated_at: string;
+          year: number;
+        };
+        Insert: {
+          city: string;
+          created_at?: string;
+          detailed_history?: string | null;
+          heroes?: string | null;
+          id?: string;
+          image_url?: string | null;
+          lat: number;
+          lng: number;
+          opponent: string;
+          route?: string | null;
+          score: string;
+          title: string;
+          updated_at?: string;
+          year: number;
+        };
+        Update: {
+          city?: string;
+          created_at?: string;
+          detailed_history?: string | null;
+          heroes?: string | null;
+          id?: string;
+          image_url?: string | null;
+          lat?: number;
+          lng?: number;
+          opponent?: string;
+          route?: string | null;
+          score?: string;
+          title?: string;
+          updated_at?: string;
+          year?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

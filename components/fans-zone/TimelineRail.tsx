@@ -9,11 +9,11 @@ import {
   type KeyboardEvent,
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import type { UclTitle } from "@/lib/ucl-history";
+import { siteKey, type UclCampaignSummary } from "@/lib/ucl-campaigns";
 
-// The fifteen titles as a timeline. This is the accessible way into the map:
-// every final is a real button here, including the ones whose markers share a
-// city and so can't be told apart by clicking the map.
+// The titles as a timeline. This is the accessible way into the globe: every
+// campaign is a real button here, including the ones whose beacons share a
+// city and so can't be told apart by clicking the globe.
 //
 // Spacing is information. The gap before each year grows with the wait that
 // preceded it (logarithmically, or 1966 → 1998 would swallow the rail), and a
@@ -26,21 +26,22 @@ function waitWeight(yearsSincePrevious: number): number {
 }
 
 interface TimelineRailProps {
-  titles: readonly UclTitle[];
+  /** The campaigns, oldest first. */
+  titles: readonly UclCampaignSummary[];
   activeYear: number | null;
-  /** City being pointed at on the map — its years light up here. */
-  highlightedCity: string | null;
-  onSelect: (title: UclTitle) => void;
-  onHighlightCity: (city: string | null) => void;
+  /** Site (city key) being pointed at on the globe — its years light up here. */
+  highlightedSite: string | null;
+  onSelect: (campaign: UclCampaignSummary) => void;
+  onHighlightSite: (key: string | null) => void;
   className?: string;
 }
 
 export default function TimelineRail({
   titles,
   activeYear,
-  highlightedCity,
+  highlightedSite,
   onSelect,
-  onHighlightCity,
+  onHighlightSite,
   className = "",
 }: TimelineRailProps) {
   const reduceMotion = useReducedMotion() ?? false;
@@ -124,7 +125,8 @@ export default function TimelineRail({
             const wait = index === 0 ? 0 : title.year - titles[index - 1].year;
             const weight = index === 0 ? 0 : waitWeight(wait);
             const isActive = index === activeIndex;
-            const isLinked = !isActive && highlightedCity === title.city;
+            const site = siteKey(title.city);
+            const isLinked = !isActive && highlightedSite === site;
             // The rail runs unbroken through every year: each button draws
             // the stretch that passes behind it, stopping at the first and
             // last ticks so the line doesn't overshoot either end.
@@ -179,15 +181,15 @@ export default function TimelineRail({
                   }}
                   onPointerEnter={(event) => {
                     if (event.pointerType === "mouse") {
-                      onHighlightCity(title.city);
+                      onHighlightSite(site);
                     }
                   }}
-                  onPointerLeave={() => onHighlightCity(null)}
+                  onPointerLeave={() => onHighlightSite(null)}
                   onFocus={() => {
                     setRovingIndex(index);
-                    onHighlightCity(title.city);
+                    onHighlightSite(site);
                   }}
-                  onBlur={() => onHighlightCity(null)}
+                  onBlur={() => onHighlightSite(null)}
                   className={`group/year relative flex h-11 w-[46px] shrink-0 flex-col items-center rounded-lg outline-none before:absolute before:top-[5px] before:h-px before:bg-white/20 focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06080d] ${axis}`}
                 >
                   {/* Tick on the rail. */}

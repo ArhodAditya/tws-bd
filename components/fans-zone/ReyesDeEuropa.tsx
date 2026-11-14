@@ -4,7 +4,9 @@ import {
   Component,
   useCallback,
   useEffect,
+  useEffectEvent,
   useId,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -15,31 +17,35 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import {
   describeScoreNote,
+  groupCampaignsByCity,
   parseScore,
-  uclHistory,
-  uclSites,
-  type TitleSite,
-  type UclTitle,
-} from "@/lib/ucl-history";
+  siteKey,
+  type CampaignSite,
+  type CampaignSource,
+  type UclCampaignSummary,
+} from "@/lib/ucl-campaigns";
 import { MQ_LG, useMediaQuery } from "./hooks";
 import TimelineRail from "./TimelineRail";
-import TitleDetail, { CloseButton } from "./TitleDetail";
-import TitleSheet from "./TitleSheet";
+import CampaignPanel, { CampaignStepper, CloseButton } from "./CampaignPanel";
+import CampaignSheet from "./CampaignSheet";
 
-// "Reyes de Europa" — every European Cup Real Madrid have won, on the map
-// where it happened.
+// "Reyes de Europa" — every European Cup Real Madrid have won, on a globe.
 //
-// One piece of state drives everything: `activeLocation`. Markers and the
-// timeline set it; the detail view reads it. How that detail is shown depends
-// on the screen: a glass card floating over the map's quiet eastern side from
-// `lg` up, a bottom sheet below that — never a floating tooltip on touch.
+// The campaigns come from the `ucl_campaigns` table (edited at
+// /admin/ucl-history) and arrive as props from the Fans Zone page; only the
+// long-form history of the campaign being read is fetched here, on demand.
+//
+// Two pieces of state drive everything. `journey` is where the visitor is and
+// where they just were — the flight path runs between the two. `panelOpen` is
+// whether the deep dive for the current stop is showing: a glass sidebar from
+// `lg` up, a bottom sheet below that.
 //
 // The stage is always dark, in both themes, like the site's other cinematic
 // surfaces.
 
 // Ibarra Real Nova revives the type cut in Madrid for Joaquín Ibarra, printer
 // to the Spanish crown — a royal Madrid face for a royal Madrid club. Italic
-// only: it is used for the title and the years, nothing else.
+// only: it is used for the titles, the years and the history's headings.
 const regal = Ibarra_Real_Nova({
   subsets: ["latin"],
   style: ["italic"],
@@ -47,15 +53,15 @@ const regal = Ibarra_Real_Nova({
   display: "swap",
 });
 
-// Client-only: see the note at the top of EuropeMap.tsx.
-const EuropeMap = dynamic(() => import("./EuropeMap"), {
+// Client-only: see the note at the top of CampaignGlobe.tsx.
+const CampaignGlobe = dynamic(() => import("./CampaignGlobe"), {
   ssr: false,
   loading: () => null,
 });
 
-// If the map can't load (a dropped chunk, an old browser), the stage simply
-// stays dark: the timeline, the card and the sheet don't depend on it.
-class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+// If the globe can't run (no WebGL, a dropped chunk), the stage simply stays
+// dark: the timeline, the panel and the sheet don't depend on it.
+class GlobeBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -67,106 +73,162 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
   }
 }
 
-const FIRST_TITLE = uclHistory[0];
-const LAST_TITLE = uclHistory[uclHistory.length - 1];
-
-// One line for screen readers each time the selection changes.
-function announce(title: UclTitle): string {
-  const score = parseScore(title.score);
-  const result = score
-    ? `Real Madrid ${score.madrid}, ${title.opponent} ${score.opponent}${
-        score.note ? `, ${describeScoreNote(score.note).toLowerCase()}` : ""
-      }`
-    : `Real Madrid ${title.score} ${title.opponent}`;
-  return `${title.year}, ${title.city}. ${title.title}. ${result}.`;
+interface Journey {
+  currentId: string | null;
+  previousId: string | null;
 }
 
-export default function ReyesDeEuropa() {
-  const [activeLocation, setActiveLocation] = useState<UclTitle | null>(null);
-  // Linked hover between the map and the timeline.
-  const [highlightedCity, setHighlightedCity] = useState<string | null>(null);
+// One line for screen readers each time the selection changes.
+function announce(campaign: UclCampaignSummary): string {
+  const score = parseScore(campaign.score);
+  const result = score
+    ? `Real Madrid ${score.madrid}, ${campaign.opponent} ${score.opponent}${
+        score.note ? `, ${describeScoreNote(score.note).toLowerCase()}` : ""
+      }`
+    : `Real Madrid ${campaign.score} ${campaign.opponent}`;
+  return `${campaign.year}, ${campaign.city}. ${campaign.title}. ${result}.`;
+}
+
+export default function ReyesDeEuropa({
+  campaigns,
+  source,
+}: {
+  campaigns: readonly UclCampaignSummary[];
+  /** "fallback" when the table couldn't be read and the built-in copy is shown. */
+  source: CampaignSource;
+}) {
+  // Ids, not objects: the campaigns are props and can be refreshed under us.
+  const [journey, setJourney] = useState<Journey>({
+    currentId: null,
+    previousId: null,
+  });
+  const [panelOpen, setPanelOpen] = useState(false);
+  // Linked hover between the globe and the timeline.
+  const [highlightedSite, setHighlightedSite] = useState<string | null>(null);
 
   const isDesktop = useMediaQuery(MQ_LG);
   const reduceMotion = useReducedMotion() ?? false;
 
   const sectionRef = useRef<HTMLElement>(null);
-  const cardRef = useRef<HTMLElement>(null);
-  // Set when the card is opened from a control that the card then covers.
-  const focusCardOnOpen = useRef(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  // Set when the sidebar is opened from a control that the sidebar then covers.
+  const focusSidebarOnOpen = useRef(false);
 
   const headingId = useId();
   const detailHeadingId = useId();
 
-  const select = useCallback((title: UclTitle) => setActiveLocation(title), []);
-  const close = useCallback(() => setActiveLocation(null), []);
+  const titles = useMemo(
+    () => [...campaigns].sort((a, b) => a.year - b.year),
+    [campaigns]
+  );
+  const sites = useMemo(() => groupCampaignsByCity(titles), [titles]);
 
-  // A marker stands for a city, and a city can hold several titles. The first
-  // click opens the oldest; clicking the same city again steps to its next.
-  const selectSite = useCallback((site: TitleSite) => {
-    setActiveLocation((current) => {
-      if (current && current.city === site.city) {
-        const index = site.titles.indexOf(current);
-        return site.titles[(index + 1) % site.titles.length];
-      }
-      return site.titles[0];
-    });
+  const find = (id: string | null) =>
+    id === null ? null : (titles.find((campaign) => campaign.id === id) ?? null);
+  const currentLocation = find(journey.currentId);
+  const previousLocation = find(journey.previousId);
+  const activeCampaign = panelOpen ? currentLocation : null;
+
+  // Travel to a campaign and open its panel. Revisiting the current stop only
+  // reopens the panel — it is not a new leg of the journey.
+  const visit = useCallback((next: UclCampaignSummary) => {
+    setJourney((journeySoFar) =>
+      journeySoFar.currentId === next.id
+        ? journeySoFar
+        : { currentId: next.id, previousId: journeySoFar.currentId }
+    );
+    setPanelOpen(true);
   }, []);
 
-  const cardOpen = isDesktop && activeLocation !== null;
-  const sheetOpen = !isDesktop && activeLocation !== null;
+  const closePanel = useCallback(() => setPanelOpen(false), []);
 
-  // Desktop card: Escape closes it. If the keyboard was inside the card, send
-  // focus back to that title's year on the timeline rather than to <body>.
-  const closeCard = useCallback(() => {
-    const card = cardRef.current;
+  // A beacon stands for a city, and a city can hold several titles. The first
+  // click opens the oldest; clicking the same city again steps to its next.
+  const selectSite = (site: CampaignSite) => {
+    const here =
+      activeCampaign && siteKey(activeCampaign.city) === site.key
+        ? site.campaigns.findIndex((c) => c.id === activeCampaign.id)
+        : -1;
+    visit(site.campaigns[(here + 1) % site.campaigns.length]);
+  };
+
+  const sidebarOpen = isDesktop && activeCampaign !== null;
+  const sheetOpen = !isDesktop && activeCampaign !== null;
+  const activeId = activeCampaign?.id ?? null;
+  const activeYear = activeCampaign?.year;
+
+  // Desktop sidebar. If the keyboard was inside it when it closes, send focus
+  // back to that campaign's year on the timeline rather than to <body>.
+  const closeSidebar = () => {
+    const sidebar = sidebarRef.current;
     const focusWasInside =
-      card !== null && card.contains(document.activeElement);
-    const year = activeLocation?.year;
-    setActiveLocation(null);
-    if (focusWasInside && year !== undefined) {
+      sidebar !== null && sidebar.contains(document.activeElement);
+    setPanelOpen(false);
+    if (focusWasInside && activeYear !== undefined) {
       sectionRef.current
-        ?.querySelector<HTMLButtonElement>(`[data-year="${year}"]`)
+        ?.querySelector<HTMLButtonElement>(`[data-year="${activeYear}"]`)
         ?.focus();
     }
-  }, [activeLocation]);
+  };
 
+  // Escape closes the sidebar. An Effect Event, so the listener always sees
+  // the latest campaign without being re-attached every time it changes.
+  const closeOnEscape = useEffectEvent(closeSidebar);
   useEffect(() => {
-    if (!cardOpen) return;
+    if (!sidebarOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeCard();
+      if (event.key === "Escape") closeOnEscape();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [cardOpen, closeCard]);
+  }, [sidebarOpen]);
 
-  // The intro's button is hidden behind the card it opens, so take the
+  // The intro's button is hidden behind the sidebar it opens, so take the
   // keyboard along with it.
   useEffect(() => {
-    if (cardOpen && focusCardOnOpen.current) {
-      focusCardOnOpen.current = false;
-      cardRef.current?.focus({ preventScroll: true });
+    if (sidebarOpen && focusSidebarOnOpen.current) {
+      focusSidebarOnOpen.current = false;
+      sidebarRef.current?.focus({ preventScroll: true });
     }
-  }, [cardOpen]);
+  }, [sidebarOpen]);
+
+  // A new campaign starts at its photo, not wherever the last one was left.
+  useEffect(() => {
+    sidebarScrollRef.current?.scrollTo({ top: 0 });
+  }, [activeId]);
+
+  if (titles.length === 0) return null;
+
+  const firstTitle = titles[0];
+  const lastTitle = titles[titles.length - 1];
 
   const startFromTheBeginning = () => {
-    focusCardOnOpen.current = isDesktop;
-    select(FIRST_TITLE);
+    focusSidebarOnOpen.current = isDesktop;
+    visit(firstTitle);
   };
 
-  const activeIndex = activeLocation ? uclHistory.indexOf(activeLocation) : -1;
-  const detail = activeLocation ? (
-    <TitleDetail
-      title={activeLocation}
+  const activeIndex = activeCampaign ? titles.indexOf(activeCampaign) : -1;
+  const previousTitle = activeIndex > 0 ? titles[activeIndex - 1] : null;
+  const nextTitle =
+    activeIndex >= 0 && activeIndex < titles.length - 1
+      ? titles[activeIndex + 1]
+      : null;
+
+  const panel = activeCampaign ? (
+    <CampaignPanel
+      campaign={activeCampaign}
       number={activeIndex + 1}
-      total={uclHistory.length}
-      siblings={uclHistory.filter(
-        (title) => title.city === activeLocation.city && title !== activeLocation
+      total={titles.length}
+      siblings={titles.filter(
+        (campaign) =>
+          campaign.id !== activeCampaign.id &&
+          siteKey(campaign.city) === siteKey(activeCampaign.city)
       )}
-      previous={uclHistory[activeIndex - 1] ?? null}
-      next={uclHistory[activeIndex + 1] ?? null}
       headingId={detailHeadingId}
-      variant={isDesktop ? "card" : "sheet"}
-      onSelect={select}
+      variant={isDesktop ? "sidebar" : "sheet"}
+      source={source}
+      onSelect={visit}
     />
   ) : null;
 
@@ -177,24 +239,24 @@ export default function ReyesDeEuropa() {
       className={`${regal.variable} relative`}
     >
       <div
-        data-active={cardOpen}
-        className="group/stage relative isolate overflow-hidden rounded-[28px] bg-[#06080d] text-zinc-100 shadow-[0_40px_90px_-50px_rgba(6,11,34,0.75)] ring-1 ring-white/[0.08] lg:h-[620px] xl:h-[660px]"
+        data-active={sidebarOpen}
+        className="group/stage relative isolate overflow-hidden rounded-[28px] bg-[#06080d] text-zinc-100 shadow-[0_40px_90px_-50px_rgba(6,11,34,0.75)] ring-1 ring-white/[0.08] lg:h-[680px] xl:h-[720px]"
       >
-        {/* Atmosphere: a low gold glow under the continent's western half,
-            where all but one of the finals were played. */}
+        {/* Atmosphere: a low gold glow behind the globe. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_42%_at_42%_68%,rgba(212,175,55,0.08),transparent_70%)] lg:bg-[radial-gradient(38%_52%_at_22%_56%,rgba(212,175,55,0.09),transparent_72%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_45%_at_50%_62%,rgba(212,175,55,0.09),transparent_70%)] lg:bg-[radial-gradient(42%_60%_at_33%_50%,rgba(212,175,55,0.1),transparent_72%)]"
         />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-12 top-0 z-30 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent"
         />
 
-        {/* Intro. In flow above the map on small screens; from `lg` it holds
-            the story column on the right until a title's card takes its place. */}
+        {/* Intro. In flow above the globe on small screens; from `lg` it holds
+            the story column on the right until a campaign's sidebar takes its
+            place. */}
         <div
-          inert={cardOpen}
+          inert={sidebarOpen}
           className="relative z-20 px-6 pt-8 sm:px-8 sm:pt-10 lg:absolute lg:right-8 lg:top-[calc(50%-2.5rem)] lg:w-[20.5rem] lg:-translate-y-1/2 lg:p-0 lg:transition-opacity lg:duration-300 lg:group-data-[active=true]/stage:opacity-0 xl:right-10 xl:w-[22rem]"
         >
           <p className="font-mono text-[10.5px] uppercase tracking-[0.34em] text-[#D4AF37]">
@@ -202,7 +264,7 @@ export default function ReyesDeEuropa() {
             <span aria-hidden className="px-2 text-white/30">
               ·
             </span>
-            {FIRST_TITLE.year}–{LAST_TITLE.year}
+            {firstTitle.year}–{lastTitle.year}
           </p>
           <h2
             id={headingId}
@@ -215,17 +277,17 @@ export default function ReyesDeEuropa() {
             </span>
           </h2>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-300">
-            {uclHistory.length} European Cups, lifted in {uclSites.length}{" "}
-            cities — from {FIRST_TITLE.city} in {FIRST_TITLE.year} to{" "}
-            {LAST_TITLE.city} in {LAST_TITLE.year}. Choose a city on the map or
-            a year on the timeline to relive that night.
+            {titles.length} European Cups, lifted in {sites.length} cities —
+            from {firstTitle.city} in {firstTitle.year} to {lastTitle.city} in{" "}
+            {lastTitle.year}. Choose a city on the globe or a year on the
+            timeline to read the story of that campaign.
           </p>
           <button
             type="button"
             onClick={startFromTheBeginning}
             className="group/cta mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-gold-300 to-gold-500 px-5 text-sm font-semibold text-midnight-950 shadow-[0_0_26px_-8px_rgba(212,175,55,0.95)] outline-none transition-transform hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[#F6ECC4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06080d] motion-reduce:hover:scale-100"
           >
-            Start in {FIRST_TITLE.city}, {FIRST_TITLE.year}
+            Start in {firstTitle.city}, {firstTitle.year}
             <ArrowRight
               aria-hidden
               className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5"
@@ -233,86 +295,110 @@ export default function ReyesDeEuropa() {
           </button>
         </div>
 
-        {/* The map. Its box matches the active preset's viewBox (EuropeMap). */}
-        <div className="relative mt-1 aspect-[400/430] sm:aspect-[800/520] lg:absolute lg:inset-0 lg:mt-0 lg:aspect-auto">
-          <MapBoundary>
-            <EuropeMap
-              titles={uclHistory}
-              sites={uclSites}
-              activeLocation={activeLocation}
-              highlightedCity={highlightedCity}
+        {/* The globe. */}
+        <div className="relative mt-2 aspect-square w-full sm:aspect-[16/11] lg:absolute lg:inset-0 lg:mt-0 lg:aspect-auto">
+          <GlobeBoundary>
+            <CampaignGlobe
+              sites={sites}
+              activeCampaign={activeCampaign}
+              previousLocation={previousLocation}
+              currentLocation={currentLocation}
+              highlightedSite={highlightedSite}
+              offsetForPanel={isDesktop}
               paused={sheetOpen}
               onSelectSite={selectSite}
-              onHighlightCity={setHighlightedCity}
-              onDismiss={close}
+              onHighlightSite={setHighlightedSite}
             />
-          </MapBoundary>
+          </GlobeBoundary>
+        </div>
+
+        {/* Scrims over the globe: a clean floor for the timeline, and on
+            desktop a quiet right-hand side for the story column. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-10">
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#06080d] via-[#06080d]/80 to-transparent lg:h-44" />
+          <div className="absolute inset-y-0 right-0 hidden w-[46%] bg-[linear-gradient(to_left,#06080d_0%,rgba(6,8,13,0.82)_38%,transparent_100%)] lg:block" />
         </div>
 
         <TimelineRail
-          titles={uclHistory}
-          activeYear={activeLocation?.year ?? null}
-          highlightedCity={highlightedCity}
-          onSelect={select}
-          onHighlightCity={setHighlightedCity}
+          titles={titles}
+          activeYear={activeCampaign?.year ?? null}
+          highlightedSite={highlightedSite}
+          onSelect={visit}
+          onHighlightSite={setHighlightedSite}
           className="relative z-20 lg:absolute lg:inset-x-0 lg:bottom-0"
         />
 
-        {/* Without JavaScript there is no map — the roll of honour still reads. */}
+        {/* Without JavaScript there is no globe — the roll of honour still reads. */}
         <noscript>
           <ol className="relative z-20 grid gap-x-8 gap-y-1.5 px-6 pb-8 text-sm text-zinc-300 sm:grid-cols-2 sm:px-8 lg:absolute lg:left-10 lg:top-10 lg:w-[34rem] lg:p-0">
-            {uclHistory.map((title) => (
-              <li key={title.year}>
-                <span className="font-mono text-[#D4AF37]">{title.year}</span>{" "}
-                {title.city} — {title.opponent}, {title.score}
+            {titles.map((campaign) => (
+              <li key={campaign.id}>
+                <span className="font-mono text-[#D4AF37]">{campaign.year}</span>{" "}
+                {campaign.city} — {campaign.opponent}, {campaign.score}
               </li>
             ))}
           </ol>
         </noscript>
 
-        {/* Desktop: the floating card. */}
+        {/* Desktop: the glass sidebar. */}
         <AnimatePresence>
-          {cardOpen ? (
+          {sidebarOpen ? (
             <motion.aside
-              key="title-card"
-              ref={cardRef}
+              key="campaign-sidebar"
+              ref={sidebarRef}
               tabIndex={-1}
               aria-labelledby={detailHeadingId}
-              initial={{ opacity: 0, x: reduceMotion ? 0 : 64 }}
+              initial={{ opacity: 0, x: reduceMotion ? 0 : 72 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{
                 opacity: 0,
-                x: reduceMotion ? 0 : 36,
+                x: reduceMotion ? 0 : 40,
                 transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              // The column only centres the card; clicks beside it still reach
-              // the map underneath.
-              className="pointer-events-none absolute bottom-[5.75rem] right-7 top-7 z-30 flex w-[21.5rem] items-center outline-none xl:w-[24rem]"
+              className="absolute bottom-[5.75rem] right-5 top-5 z-30 w-[25rem] outline-none xl:w-[28rem]"
             >
-              <div className="glass-panel edge-gold pointer-events-auto relative flex max-h-full w-full flex-col overflow-hidden rounded-[26px] shadow-[0_34px_80px_-28px_rgba(0,0,0,0.9)]">
-                <CloseButton onClick={closeCard} />
-                <div className="overflow-y-auto overscroll-contain pb-3">
-                  {detail}
+              <div className="glass-panel edge-gold relative flex h-full flex-col overflow-hidden rounded-[26px] shadow-[0_34px_80px_-28px_rgba(0,0,0,0.9)]">
+                <CloseButton onClick={closeSidebar} />
+                <div
+                  ref={sidebarScrollRef}
+                  className="scroll-gold min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6"
+                >
+                  {panel}
                 </div>
+                <CampaignStepper
+                  previous={previousTitle}
+                  next={nextTitle}
+                  onSelect={visit}
+                  className="px-3 py-1.5"
+                />
               </div>
             </motion.aside>
           ) : null}
         </AnimatePresence>
       </div>
 
-      {/* Below `lg`: the same detail in a bottom sheet. */}
-      <TitleSheet
+      {/* Below `lg`: the same panel in a bottom sheet. */}
+      <CampaignSheet
         open={sheetOpen}
-        onClose={close}
+        onClose={closePanel}
         labelledBy={detailHeadingId}
+        contentKey={activeId}
         className={regal.variable}
+        footer={
+          <CampaignStepper
+            previous={previousTitle}
+            next={nextTitle}
+            onSelect={visit}
+            className="px-3 py-1.5 sm:px-5"
+          />
+        }
       >
-        {detail}
-      </TitleSheet>
+        {panel}
+      </CampaignSheet>
 
       <p role="status" className="sr-only">
-        {activeLocation ? announce(activeLocation) : ""}
+        {activeCampaign ? announce(activeCampaign) : ""}
       </p>
     </section>
   );

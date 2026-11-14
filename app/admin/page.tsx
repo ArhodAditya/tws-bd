@@ -12,6 +12,7 @@ import {
   ShieldPlus,
   ShoppingBag,
   Star,
+  Trophy,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { isSuperAdmin, isCurrentUserAdmin } from "@/lib/admin";
@@ -210,6 +211,27 @@ export default async function AdminPage() {
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
               Open product reviews
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+
+          {/* UCL History — the Fans Zone globe's content */}
+          <Link
+            href="/admin/ucl-history"
+            className="group flex flex-col rounded-2xl border border-zinc-800/50 bg-zinc-900/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-zinc-700/80 hover:shadow-2xl active:scale-[0.98]"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600 dark:text-gold-400">
+              <Trophy className="h-5 w-5" />
+            </span>
+            <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
+              UCL History
+            </h2>
+            <p className="mt-1.5 flex-1 text-sm text-zinc-400">
+              Write the full story of each European Cup on the Fans Zone globe
+              and upload the photo of the final — or add the next title.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gold-600 transition-colors group-hover:text-gold-700 dark:text-gold-400 dark:group-hover:text-gold-300">
+              Open campaigns
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>

@@ -59,16 +59,39 @@ function ToolbarButton({
 // `![Article Image](secure_url)` into the content at the caret (falling back
 // to the end of the text). Shared by the New and Edit article forms so both
 // behave identically.
+//
+// The optional props let other long-form fields reuse it — the UCL campaign
+// history, for one. Their defaults are the article form's original wording, so
+// the article forms are unaffected.
 export default function ArticleBodyEditor({
   content,
   onChange,
   inputClass,
   labelClass,
+  id = "content",
+  label = "Content",
+  required = true,
+  rows = 14,
+  placeholder = "Write the story… Separate paragraphs with a blank line. Use the buttons above to style text and drop images anywhere.",
+  insertImageLabel = "🖼️ Insert Image into Article",
+  imageAlt = "Article Image",
+  hint = "Uploaded images are inserted as Markdown at your cursor and render inline in the published article.",
 }: {
   content: string;
   onChange: (value: string) => void;
   inputClass: string;
   labelClass: string;
+  /** id of the textarea (and the label's htmlFor). */
+  id?: string;
+  label?: string;
+  required?: boolean;
+  rows?: number;
+  placeholder?: string;
+  insertImageLabel?: string;
+  /** Alt text written into the Markdown for an inserted image. */
+  imageAlt?: string;
+  /** Helper line under the textarea. */
+  hint?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +130,7 @@ export default function ArticleBodyEditor({
   };
 
   const insertImageMarkdown = (url: string) => {
-    const snippet = `![Article Image](${url})`;
+    const snippet = `![${imageAlt}](${url})`;
     const el = textareaRef.current;
 
     // No textarea handle (shouldn't happen) → just append to the end.
@@ -168,8 +191,8 @@ export default function ArticleBodyEditor({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label htmlFor="content" className={labelClass}>
-          Content <span className="font-normal text-zinc-500">(Markdown)</span>
+        <label htmlFor={id} className={labelClass}>
+          {label} <span className="font-normal text-zinc-500">(Markdown)</span>
         </label>
 
         <button
@@ -186,7 +209,7 @@ export default function ArticleBodyEditor({
           ) : (
             <>
               <ImagePlus className="h-4 w-4" />
-              🖼️ Insert Image into Article
+              {insertImageLabel}
             </>
           )}
         </button>
@@ -206,13 +229,13 @@ export default function ArticleBodyEditor({
       </div>
 
       <textarea
-        id="content"
+        id={id}
         ref={textareaRef}
-        required
-        rows={14}
+        required={required}
+        rows={rows}
         value={content}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Write the story… Separate paragraphs with a blank line. Use the buttons above to style text and drop images anywhere."
+        placeholder={placeholder}
         className={`${inputClass} resize-y leading-relaxed`}
       />
 
@@ -222,10 +245,7 @@ export default function ArticleBodyEditor({
           {error}
         </p>
       ) : (
-        <p className="text-xs text-zinc-500">
-          Uploaded images are inserted as Markdown at your cursor and render
-          inline in the published article.
-        </p>
+        <p className="text-xs text-zinc-500">{hint}</p>
       )}
     </div>
   );

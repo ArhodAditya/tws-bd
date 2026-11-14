@@ -12,6 +12,8 @@ import {
 import {
   CAMPAIGN_YEAR_RANGE,
   HISTORY_MAX_CHARS,
+  MAX_CAMPAIGN_IMAGES,
+  campaignImages,
   countWords,
   normalizeCampaignInput,
   type UclCampaign,
@@ -41,7 +43,11 @@ export default function UclCampaignForm({
   const [score, setScore] = useState(campaign?.score ?? "");
   const [heroes, setHeroes] = useState(campaign?.heroes ?? "");
   const [route, setRoute] = useState(campaign?.route ?? "");
-  const [imageUrl, setImageUrl] = useState(campaign?.image_url ?? "");
+  // The gallery, cover first. A campaign saved before galleries existed starts
+  // with its single photo.
+  const [images, setImages] = useState<string[]>(() =>
+    campaign ? campaignImages(campaign) : []
+  );
   const [history, setHistory] = useState(campaign?.detailed_history ?? "");
 
   const [loading, setLoading] = useState(false);
@@ -68,7 +74,7 @@ export default function UclCampaignForm({
       heroes,
       route,
       detailed_history: history,
-      image_url: imageUrl,
+      images,
     });
     if (!parsed.ok) {
       setError(parsed.message);
@@ -276,28 +282,28 @@ export default function UclCampaignForm({
         </p>
       </div>
 
-      {/* Photo */}
+      {/* Photos */}
       <div className="space-y-2">
         <span className={labelClass}>
-          Photo of the final{" "}
-          <span className="font-normal text-zinc-500">(optional)</span>
+          Photos <span className="font-normal text-zinc-500">(optional)</span>
         </span>
         <ImageUploader
-          multiple={false}
-          value={imageUrl ? [imageUrl] : []}
-          onChange={(action) =>
-            setImageUrl((prev) => {
-              const next =
-                typeof action === "function"
-                  ? action(prev ? [prev] : [])
-                  : action;
-              return next[0] ?? "";
-            })
-          }
+          multiple={true}
+          value={images}
+          onChange={setImages}
+          primaryHint="is the cover — the first photo fans see in the campaign's gallery"
         />
-        <p className={hintClass}>
-          Shown as the wide banner at the top of the campaign&apos;s panel. A
-          landscape photo works best.
+        <p
+          className={`text-xs ${
+            images.length > MAX_CAMPAIGN_IMAGES
+              ? "font-semibold text-red-400"
+              : "text-zinc-500"
+          }`}
+        >
+          {images.length} of {MAX_CAMPAIGN_IMAGES} photos. The one marked{" "}
+          <span className="text-zinc-300">Primary</span> is the cover; use the
+          arrows on a thumbnail to reorder. Fans can swipe through them and
+          open each one full screen, so upload the largest versions you have.
         </p>
       </div>
 

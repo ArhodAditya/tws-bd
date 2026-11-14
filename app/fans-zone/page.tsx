@@ -3,12 +3,7 @@ import Link from "next/link";
 import { ArrowRight, MessagesSquare, ShieldHalf, Sparkles, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { type FanReviewWithAuthor } from "@/lib/fan-reviews";
-import {
-  CAMPAIGN_SUMMARY_COLUMNS,
-  FALLBACK_CAMPAIGNS,
-  type CampaignSource,
-  type UclCampaignSummary,
-} from "@/lib/ucl-campaigns";
+import { fetchCampaignSummaries } from "@/lib/ucl-campaigns";
 import Reveal from "@/components/Reveal";
 import FanReviewCard from "@/components/FanReviewCard";
 import FanReviewForm from "@/components/FanReviewForm";
@@ -24,35 +19,27 @@ export default async function FansZonePage() {
   const supabase = await createClient();
 
   // Both reads are independent, so they go out together.
-  const [{ data: reviewData }, { data: campaignRows }] = await Promise.all([
-    // Approved fan reviews power the "Voices of the Madridistas" wall, newest
-    // first. RLS only ever returns approved rows here; if the table is missing
-    // this errors and `data` is null — the section then shows its empty state.
-    supabase
-      .from("fan_reviews")
-      .select("*, profiles(full_name, avatar_url)")
-      .eq("is_approved", true)
-      .order("created_at", { ascending: false })
-      .limit(12),
-    // The campaigns behind the "Reyes de Europa" globe — every column except
-    // the long-form history, which the panel fetches for one campaign at a
-    // time. Managed at /admin/ucl-history.
-    supabase
-      .from("ucl_campaigns")
-      .select(CAMPAIGN_SUMMARY_COLUMNS)
-      .order("year", { ascending: true }),
-  ]);
+  const [{ data: reviewData }, { campaigns, source: campaignSource }] =
+    await Promise.all([
+      // Approved fan reviews power the "Voices of the Madridistas" wall, newest
+      // first. RLS only ever returns approved rows here; if the table is
+      // missing this errors and `data` is null — the section then shows its
+      // empty state.
+      supabase
+        .from("fan_reviews")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false })
+        .limit(12),
+      // The campaigns behind the "Reyes de Europa" globe — every column except
+      // the long-form history, which the panel fetches for one campaign at a
+      // time. Managed at /admin/ucl-history. Falls back to the built-in copy
+      // of the fifteen titles if the table can't be read.
+      fetchCampaignSummaries(supabase),
+    ]);
 
   const reviews: FanReviewWithAuthor[] =
     (reviewData as FanReviewWithAuthor[] | null) ?? [];
-
-  // If the table is missing (the migration is applied by hand), unreadable or
-  // empty, show the built-in copy of the fifteen titles instead of nothing.
-  const fromDatabase = campaignRows !== null && campaignRows.length > 0;
-  const campaigns: readonly UclCampaignSummary[] = fromDatabase
-    ? campaignRows
-    : FALLBACK_CAMPAIGNS;
-  const campaignSource: CampaignSource = fromDatabase ? "database" : "fallback";
 
   return (
     <div className="relative overflow-hidden bg-slate-50 text-slate-900 dark:bg-midnight-950 dark:text-white">

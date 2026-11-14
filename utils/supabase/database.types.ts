@@ -425,7 +425,10 @@ export type Database = {
           detailed_history: string | null;
           heroes: string | null;
           id: string;
+          // Mirror of `images[1]` (the cover), kept for backwards compatibility.
           image_url: string | null;
+          // Ordered photo gallery; the first entry is the cover.
+          images: string[];
           lat: number;
           lng: number;
           opponent: string;
@@ -442,6 +445,7 @@ export type Database = {
           heroes?: string | null;
           id?: string;
           image_url?: string | null;
+          images?: string[];
           lat: number;
           lng: number;
           opponent: string;
@@ -458,6 +462,7 @@ export type Database = {
           heroes?: string | null;
           id?: string;
           image_url?: string | null;
+          images?: string[];
           lat?: number;
           lng?: number;
           opponent?: string;

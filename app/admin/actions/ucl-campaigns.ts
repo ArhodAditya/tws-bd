@@ -24,6 +24,8 @@ const UUID_PATTERN =
 // Postgres / PostgREST codes worth translating into something actionable.
 const UNIQUE_VIOLATION = "23505";
 const MISSING_TABLE_CODES = new Set(["42P01", "PGRST205"]);
+// "No such column": 42703 from Postgres, PGRST204 from PostgREST's schema cache.
+const MISSING_COLUMN_CODES = new Set(["42703", "PGRST204"]);
 
 function describeDbError(
   error: { code?: string; message: string },
@@ -35,7 +37,16 @@ function describeDbError(
   if (error.code && MISSING_TABLE_CODES.has(error.code)) {
     return "The ucl_campaigns table doesn't exist yet. Run the create_ucl_campaigns migration in the Supabase SQL editor, then try again.";
   }
+  if (error.code && MISSING_COLUMN_CODES.has(error.code)) {
+    return "The photo gallery column doesn't exist yet. Run the add_images_to_ucl_campaigns migration in the Supabase SQL editor, then save again — nothing was changed.";
+  }
   return error.message;
+}
+
+// The row to write for a validated input. `image_url` always mirrors the
+// gallery's cover, so readers of the older single-photo column stay correct.
+function toRow(input: UclCampaignInput) {
+  return { ...input, image_url: input.images[0] ?? null };
 }
 
 // Both the public globe and the admin list read these rows.
@@ -55,7 +66,7 @@ export async function createUclCampaign(
 
   const { error } = await createAdminClient()
     .from("ucl_campaigns")
-    .insert(parsed.value);
+    .insert(toRow(parsed.value));
 
   if (error) {
     return { success: false, message: describeDbError(error, parsed.value.year) };
@@ -82,7 +93,7 @@ export async function updateUclCampaign(
   // `.select()` tells an applied update apart from a silent 0-row no-op.
   const { data, error } = await createAdminClient()
     .from("ucl_campaigns")
-    .update({ ...parsed.value, updated_at: new Date().toISOString() })
+    .update({ ...toRow(parsed.value), updated_at: new Date().toISOString() })
     .eq("id", id)
     .select("id");
 

@@ -15,6 +15,7 @@ export default function ImageUploader({
   value,
   onChange,
   multiple = true,
+  primaryHint = "leads the product card and the gallery",
 }: {
   value: string[];
   // Accepts React's state setter so updates can be functional — this is what
@@ -22,6 +23,9 @@ export default function ImageUploader({
   onChange: Dispatch<SetStateAction<string[]>>;
   // Products allow a gallery; the article form takes a single hero image.
   multiple?: boolean;
+  // What the Primary image does, for galleries that aren't products — it
+  // completes "The Primary image …". Defaults to the product wording.
+  primaryHint?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -188,8 +192,8 @@ export default function ImageUploader({
 
       {showReorder ? (
         <p className="text-xs text-midnight-900/50">
-          The <strong className="font-semibold">Primary</strong> image leads the
-          product card and the gallery. Use the arrows to reorder, then save.
+          The <strong className="font-semibold">Primary</strong> image{" "}
+          {primaryHint}. Use the arrows to reorder, then save.
         </p>
       ) : null}
     </div>

@@ -4,7 +4,8 @@
 // fallback, and no server-only imports, so both Server and Client Components
 // (and "use server" action files, which may only export functions) can use it.
 
-import type { Tables } from "@/utils/supabase/database.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Tables } from "@/utils/supabase/database.types";
 import { SEED_CAMPAIGNS } from "@/lib/ucl-campaigns-seed";
 
 export type UclCampaign = Tables<"ucl_campaigns">;
@@ -15,6 +16,11 @@ export type UclCampaign = Tables<"ucl_campaigns">;
 // (see CampaignHistory) rather than shipped fifteen times over with the page.
 
 export const CAMPAIGN_SUMMARY_COLUMNS =
+  "id, year, city, lat, lng, title, opponent, score, heroes, route, image_url, images";
+
+// The same list for a database where the `images` migration hasn't been run
+// yet. See fetchCampaignSummaries.
+const CAMPAIGN_SUMMARY_COLUMNS_LEGACY =
   "id, year, city, lat, lng, title, opponent, score, heroes, route, image_url";
 
 export type UclCampaignSummary = Pick<
@@ -30,10 +36,34 @@ export type UclCampaignSummary = Pick<
   | "heroes"
   | "route"
   | "image_url"
+  | "images"
 >;
 
 /** Where the campaigns on screen came from. */
 export type CampaignSource = "database" | "fallback";
+
+// --- Photos -----------------------------------------------------------------
+
+/** How many photos one campaign's gallery may hold. */
+export const MAX_CAMPAIGN_IMAGES = 24;
+
+/**
+ * A campaign's photos, cover first. Reads the `images` gallery, and falls back
+ * to the older single `image_url` — which is all a row has before the `images`
+ * migration is run, or if it was last saved before galleries existed.
+ */
+export function campaignImages(campaign: {
+  images?: readonly string[] | null;
+  image_url?: string | null;
+}): string[] {
+  const gallery = (campaign.images ?? [])
+    .map((url) => (typeof url === "string" ? url.trim() : ""))
+    .filter(Boolean);
+  if (gallery.length > 0) return Array.from(new Set(gallery));
+
+  const cover = campaign.image_url?.trim();
+  return cover ? [cover] : [];
+}
 
 // --- Fallback ---------------------------------------------------------------
 // Used when the table is missing (migration not run yet), unreadable, or empty.
@@ -55,12 +85,56 @@ export const FALLBACK_CAMPAIGNS: readonly UclCampaignSummary[] =
     heroes: seed.heroes,
     route: seed.route,
     image_url: null,
+    images: [],
   }));
 
 /** The seeded one-line history for a fallback campaign, or null. */
 export function getFallbackHistory(id: string): string | null {
   const seed = SEED_CAMPAIGNS.find((entry) => fallbackId(entry.year) === id);
   return seed ? seed.detailed_history : null;
+}
+
+// Postgres: "column does not exist".
+const UNDEFINED_COLUMN = "42703";
+
+/**
+ * Load the campaigns for the Fans Zone with any Supabase client, oldest first.
+ * Never throws and never comes back empty: if the table is missing, unreadable
+ * or has no rows, the built-in copy is returned with `source: "fallback"`.
+ *
+ * Migrations on this project are applied by hand, so the code can be live
+ * before the `images` column exists. Asking for a column that isn't there
+ * fails the whole query; rather than drop to the fallback — and hide everything
+ * already written in the CMS — the read is retried without it.
+ */
+export async function fetchCampaignSummaries(
+  supabase: SupabaseClient<Database>
+): Promise<{
+  campaigns: readonly UclCampaignSummary[];
+  source: CampaignSource;
+}> {
+  const current = await supabase
+    .from("ucl_campaigns")
+    .select(CAMPAIGN_SUMMARY_COLUMNS)
+    .order("year", { ascending: true });
+
+  let rows: UclCampaignSummary[] | null = current.data
+    ? current.data.map((row) => ({ ...row, images: campaignImages(row) }))
+    : null;
+
+  if (rows === null && current.error?.code === UNDEFINED_COLUMN) {
+    const legacy = await supabase
+      .from("ucl_campaigns")
+      .select(CAMPAIGN_SUMMARY_COLUMNS_LEGACY)
+      .order("year", { ascending: true });
+    rows = legacy.data
+      ? legacy.data.map((row) => ({ ...row, images: campaignImages(row) }))
+      : null;
+  }
+
+  return rows !== null && rows.length > 0
+    ? { campaigns: rows, source: "database" }
+    : { campaigns: FALLBACK_CAMPAIGNS, source: "fallback" };
 }
 
 // --- Sites ------------------------------------------------------------------
@@ -182,7 +256,12 @@ export interface UclCampaignInput {
   heroes: string | null;
   route: string | null;
   detailed_history: string | null;
-  image_url: string | null;
+  /**
+   * The photo gallery in display order; the first is the cover. `image_url` is
+   * not part of the input — the Server Actions derive it from this list so the
+   * two can never disagree.
+   */
+  images: string[];
 }
 
 /** Result of the create / update / delete Server Actions. */
@@ -269,10 +348,19 @@ export function normalizeCampaignInput(
     );
   }
 
-  // Only ever rendered as an image source, but keep it to real web addresses.
-  const imageUrl = optionalText(input.image_url);
-  if (imageUrl && !/^https:\/\/[^\s]+$/i.test(imageUrl)) {
-    return fail("The image must be an https:// address.");
+  // Only ever rendered as image sources, but keep them to real web addresses.
+  // Order is preserved (it is the gallery order); blanks and repeats are not.
+  const images: string[] = [];
+  for (const entry of Array.isArray(input.images) ? input.images : []) {
+    const url = typeof entry === "string" ? entry.trim() : "";
+    if (!url) continue;
+    if (!/^https:\/\/[^\s]+$/i.test(url)) {
+      return fail("Every photo must be an https:// address.");
+    }
+    if (!images.includes(url)) images.push(url);
+  }
+  if (images.length > MAX_CAMPAIGN_IMAGES) {
+    return fail(`A campaign can hold up to ${MAX_CAMPAIGN_IMAGES} photos.`);
   }
 
   return {
@@ -288,7 +376,7 @@ export function normalizeCampaignInput(
       heroes,
       route,
       detailed_history: history,
-      image_url: imageUrl,
+      images,
     },
   };
 }
